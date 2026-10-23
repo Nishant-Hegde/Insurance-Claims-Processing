@@ -1,0 +1,43 @@
+﻿# Secrets and local environment
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Runtime output
+logs/*
+!logs/.gitkeep
+*.log
+*.tmp
+
+# Local database dumps and generated exports
+*.dump
+*.backup
+*.bak
+*.sqlite
+*.sqlite3
