@@ -1,4 +1,4 @@
-import psycopg2, random, sys, subprocess, json, os, pathlib
+﻿import psycopg2, random, sys, subprocess, json, os, pathlib
 from psycopg2 import errors
 
 if len(sys.argv) < 2:
@@ -31,6 +31,10 @@ def user(email, role):
     return q1("INSERT INTO app_user(role_id,email,password_hash,full_name) SELECT role_id,%s,'$argon2$x','Test' FROM app_role WHERE role_name=%s RETURNING user_id", (email, role))
 H1 = user('h1@x.com','POLICYHOLDER'); H2 = user('h2@x.com','POLICYHOLDER')
 ADJ = user('adj@x.com','CLAIMS_ADJUSTER'); ADJ_OFF = user('adjoff@x.com','CLAIMS_ADJUSTER'); ADM = user('adm@x.com','ADMIN')
+cur.execute(
+    "INSERT INTO risk_rule (rule_version, definition, is_active, created_by) VALUES (%s, %s::jsonb, %s, %s)",
+    ("r1", json.dumps({"high_similarity_threshold": 0.9, "medium_similarity_threshold": 0.7}), True, ADM)
+)
 cur.execute("UPDATE app_user SET is_active=false WHERE user_id=%s",(ADJ_OFF,))
 M1 = q1("INSERT INTO embedding_model(model_name,model_version,dimension) VALUES('m','1',384) RETURNING model_id")
 M2 = q1("INSERT INTO embedding_model(model_name,model_version,dimension) VALUES('m','2',384) RETURNING model_id")
@@ -271,7 +275,7 @@ a("audit: action/target mismatch rejected", lambda k: au(k,'USER',ADM,'CLAIM_SUB
 a("audit: USER without actor rejected", lambda k: au(k,'USER',None,'CLAIM_SUBMITTED',claim_id=c1))
 a("audit: SYSTEM with actor rejected", lambda k: au(k,'SYSTEM',ADM,'CLAIM_SUBMITTED',claim_id=c1))
 a("audit: unknown action rejected", lambda k: au(k,'SYSTEM',None,'HACKED',claim_id=c1))
-a("audit: assessment of a different claim rejected", lambda k: au(k,'SYSTEM',None,'SCREENING_COMPLETED',claim_id=c1,assessment_id=aid3), FK)
+a("audit: assessment of a different claim rejected", lambda k: au(k,'SYSTEM',None,'REVIEW_RECORDED',claim_id=c1,assessment_id=aid3), FK)
 a("audit: assessment without claim rejected", lambda k: au(k,'SYSTEM',None,'USER_CREATED',target_user_id=H1,assessment_id=aid3))
 def t_trigger_audit(k):
     k.execute("SELECT count(*) FROM audit_log WHERE assessment_id=%s AND action='SCREENING_COMPLETED'",(aid3,))
@@ -324,6 +328,7 @@ cc.close()
 print("== SRS v2.0 extensions (risk rules, responses, notifications, search, reports)")
 def t_extensions(k):
     # Add a versioned configurable rule; thresholds are data, not hard-coded in the function.
+    k.execute("UPDATE risk_rule SET is_active=false WHERE is_active=true")
     k.execute("INSERT INTO risk_rule(rule_version,definition,is_active,created_by) VALUES('test-rule-v1',%s,true,%s)",
               (json.dumps({"high_similarity_threshold":0.90,"medium_similarity_threshold":0.70}), ADM))
     cl = newclaim(cur_=k)
@@ -353,3 +358,5 @@ expect_err("information response with blank body is rejected", lambda k: k.execu
 passed = sum(1 for r in results if r[1]); failed_ = [r for r in results if not r[1]]
 print(f"\nTOTAL {len(results)}  PASS {passed}  FAIL {len(failed_)}")
 for r in failed_: print("  FAILED:", r[0], r[2])
+
+

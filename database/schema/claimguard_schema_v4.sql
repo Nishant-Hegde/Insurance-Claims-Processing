@@ -1,4 +1,4 @@
--- ClaimGuard relational schema v4 (SRS v2.0 alignment)
+-- ClaimGuard relational schema v4.1 (SRS v2.0 alignment; FK integrity fixes)
 -- Requires: PostgreSQL 13+ and pgvector 0.5+ (HNSW). Tested: PostgreSQL 16.15 + pgvector 0.6.0.
 -- Run once on an empty database:  psql -v ON_ERROR_STOP=1 -d <db> -f claimguard_schema.sql
 -- No psql variables or meta-commands are used, so any runner (psql, pgAdmin, Prisma raw SQL) works.
@@ -180,6 +180,8 @@ CREATE TABLE review (
     CONSTRAINT ck_review_action CHECK (review_action IN ('APPROVED', 'REJECTED', 'INFO_REQUESTED')),
     CONSTRAINT ck_review_notes  CHECK (btrim(notes) <> ''),
     CONSTRAINT uq_review_claim_action UNIQUE (review_id, claim_id, review_action),
+    -- Required as the exact referenced key for information_response(review_id, claim_id).
+    CONSTRAINT uq_review_id_claim UNIQUE (review_id, claim_id),
     CONSTRAINT fk_review_assessment FOREIGN KEY (assessment_id, claim_id)
         REFERENCES screening_assessment (assessment_id, claim_id) ON DELETE RESTRICT
 );
@@ -661,6 +663,14 @@ CREATE TABLE risk_rule (
 );
 CREATE UNIQUE INDEX ux_risk_rule_one_active ON risk_rule(is_active) WHERE is_active;
 CREATE INDEX ix_risk_rule_created_by ON risk_rule(created_by);
+
+-- Keep each completed screening's recorded rule version tied to a real, retained rule.
+-- Added after risk_rule is created because screening_assessment is defined earlier in this file.
+ALTER TABLE screening_assessment
+    ADD CONSTRAINT fk_assessment_risk_rule_version
+    FOREIGN KEY (risk_rule_version)
+    REFERENCES risk_rule (rule_version)
+    ON DELETE RESTRICT;
 
 CREATE TABLE information_response (
     response_id   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
