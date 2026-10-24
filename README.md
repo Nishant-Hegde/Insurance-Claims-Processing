@@ -353,3 +353,55 @@ The requirements and architecture documents, ER/schema artifacts, SQL
 schema, and Python test runner have been prepared. Database runtime
 validation and full test execution remain pending. Update this section
 when those checks have actually been completed.
+
+<!-- CURRENT IMPLEMENTATION STATUS -->
+
+## Current Application Implementation
+
+The `backend/` directory contains the Next.js application, dashboard, and
+API Route Handlers.
+
+Implemented dashboard endpoints:
+
+- `GET /api/dashboard/stats` — returns dashboard counts from PostgreSQL.
+- `GET /api/claims` — returns the claims list and available screening-risk
+  information.
+
+The dashboard includes loading, error, retry, and empty-data states.
+An empty database can therefore display zero counts and an empty claims
+list; this does not mean the full claims workflow has been implemented.
+
+### Run the Next.js application
+
+From the repository root:
+
+```powershell
+cd backend
+npm ci
+```
+
+Configure `DATABASE_URL` in the local `backend/.env.local` file using
+your local database connection. Never commit this file or share its
+credentials.
+
+Start the development server:
+
+```powershell
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+Run the available application checks:
+
+```powershell
+npm run typecheck
+npm run build
+```
+
+The dashboard and these API endpoints are an initial application
+integration, not evidence that authentication, claim submission,
+fraud-screening execution, adjuster decisions, or every SRS requirement
+is complete. Verify each workflow and its authorization before claiming
+full application readiness.
+
