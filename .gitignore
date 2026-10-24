@@ -41,3 +41,15 @@ logs/*
 *.bak
 *.sqlite
 *.sqlite3
+
+# Node.js dependencies and generated output
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+
+# Backend-local environment files
+backend/.env*
+!backend/.env.example
+
