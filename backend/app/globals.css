@@ -1,0 +1,128 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --ink:    #172b4d;
+  --muted:  #66758b;
+  --line:   #e5eaf1;
+  --canvas: #f4f6fa;
+  --navy:   #152b4d;
+  --blue:   #315ee7;
+}
+
+*  { box-sizing: border-box; }
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: "Inter", system-ui, Arial, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; background: none; border: none; padding: 0; }
+::selection { background: #dbe6ff; }
+
+/* -------------------------------------------------------------------------
+   Sidebar navigation
+------------------------------------------------------------------------- */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #9fb3cb;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.14s ease, color 0.14s ease;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sidebar-link.active {
+  background: #253e5e;
+  color: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+   Cards / panels
+------------------------------------------------------------------------- */
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(20 42 76 / 4%), 0 1px 2px rgb(20 42 76 / 3%);
+}
+
+/* -------------------------------------------------------------------------
+   Status pills
+------------------------------------------------------------------------- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------------------------------
+   Skeleton loading animation
+------------------------------------------------------------------------- */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    #eef1f5 25%,
+    #e2e7ef 50%,
+    #eef1f5 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* -------------------------------------------------------------------------
+   Focus ring
+------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid #315ee7;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* -------------------------------------------------------------------------
+   Responsive overrides
+------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .sidebar          { display: none; }
+  .mobile-nav       { display: flex !important; }
+  .dashboard-grid   { grid-template-columns: 1fr !important; }
+  .metric-grid      { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .page-content     { padding: 16px 14px !important; }
+  .table-scroll     { overflow-x: auto; }
+  .claims-table     { min-width: 680px; }
+}
+
+@media (max-width: 480px) {
+  .metric-grid { grid-template-columns: 1fr !important; }
+}
