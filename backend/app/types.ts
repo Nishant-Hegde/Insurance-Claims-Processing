@@ -6,6 +6,22 @@
  * "use client" dashboard page, so it must be safe for both runtimes.
  */
 
+/** Role names as stored in app_role.role_name. */
+export type Role = "POLICYHOLDER" | "CLAIMS_ADJUSTER" | "ADMIN";
+
+export const ROLE_LABELS: Record<Role, string> = {
+  POLICYHOLDER: "Policyholder",
+  CLAIMS_ADJUSTER: "Claims adjuster",
+  ADMIN: "Administrator",
+};
+
+export interface SessionUser {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: Role;
+}
+
 export interface DashboardStats {
   totalClaims: number;
   awaitingReview: number;

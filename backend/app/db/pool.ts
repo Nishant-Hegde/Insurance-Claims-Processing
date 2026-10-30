@@ -16,7 +16,7 @@ function createPool(): Pool {
         "Add it to backend/.env.local before starting the server."
     );
   }
-  return new Pool({
+  const pool = new Pool({
     connectionString,
     max: 5,
     idleTimeoutMillis: 30_000,
@@ -29,9 +29,15 @@ function createPool(): Pool {
   return pool;
 }
 
-const pool: Pool =
-  process.env.NODE_ENV === "development"
-    ? (global.__pgPool ??= createPool())
-    : createPool();
+// Created on first use, not on import, so `next build` works without a database.
+function getPool(): Pool {
+  return (global.__pgPool ??= createPool());
+}
+
+const pool = {
+  query: ((...args: unknown[]) =>
+    (getPool().query as (...a: unknown[]) => unknown)(...args)) as Pool["query"],
+  connect: () => getPool().connect(),
+};
 
 export default pool;

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import pool from "@/app/db/pool";
 import type { DashboardStats } from "@/app/types";
+import { requireRole } from "@/app/lib/auth";
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const auth = await requireRole("CLAIMS_ADJUSTER", "ADMIN");
+    if ("response" in auth) return auth.response;
+
     const result = await pool.query<{
       total_claims: string;
       awaiting_review: string;

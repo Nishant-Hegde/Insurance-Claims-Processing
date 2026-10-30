@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/app/db/pool";
 import type { ClaimRow, ClaimsResponse } from "@/app/types";
+import { requireRole } from "@/app/lib/auth";
 
 /**
  * Maps the DB screening risk_indicator to a short UI label.
@@ -40,6 +41,12 @@ function statusLabel(claimStatus: string): string {
 
 export async function GET(): Promise<NextResponse> {
   try {
+    const auth = await requireRole("POLICYHOLDER", "CLAIMS_ADJUSTER", "ADMIN");
+    if ("response" in auth) return auth.response;
+    // Policyholders only ever receive their own claims; staff see all.
+    const ownerFilter =
+      auth.user.role === "POLICYHOLDER" ? auth.user.userId : null;
+
     const result = await pool.query<{
       claim_id: string;
       full_name: string;
@@ -71,9 +78,10 @@ export async function GET(): Promise<NextResponse> {
         ORDER  BY attempt_no DESC
         LIMIT  1
       ) sa ON true
+      WHERE $1::uuid IS NULL OR c.claimant_id = $1::uuid
       ORDER BY c.submitted_at DESC
       LIMIT 50
-    `);
+    `, [ownerFilter]);
 
     const claims: ClaimRow[] = result.rows.map((row) => {
       const amount = parseFloat(row.claimed_amount);
