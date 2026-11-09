@@ -821,6 +821,30 @@ SELECT notification_id, notification_type, read_at, dismissed_at
 FROM   notification
 WHERE  notification_id = '91000000-0000-0000-0000-000000000005';
 
+-- G14b. DML DELETE — remove login sessions that can no longer be used (requires migration 001).
+--     Business tables (claims, reviews, decisions, audit ...) block DELETE by design (G10);
+--     sessions are not business history, so housekeeping deletes them for real.
+--     Two dead sessions are created first: one expired, one revoked by sign-out.
+INSERT INTO user_session (user_id, token_hash, created_at, expires_at, revoked_at)
+VALUES ('a3000000-0000-0000-0000-000000000001', repeat('e', 64),
+        now() - interval '10 days', now() - interval '9 days', NULL),            -- expired
+       ('a3000000-0000-0000-0000-000000000002', repeat('f', 64),
+        now() - interval '2 days',  now() + interval '1 day',  now() - interval '1 day');  -- revoked
+
+SELECT 'before DELETE' AS stage,
+       count(*) FILTER (WHERE revoked_at IS NULL AND expires_at > now())     AS live_sessions,
+       count(*) FILTER (WHERE revoked_at IS NOT NULL OR expires_at <= now()) AS dead_sessions
+FROM   user_session;
+
+DELETE FROM user_session
+WHERE  revoked_at IS NOT NULL OR expires_at <= now()
+RETURNING session_id, user_id, expires_at, revoked_at;
+
+SELECT 'after DELETE' AS stage,
+       count(*) FILTER (WHERE revoked_at IS NULL AND expires_at > now())     AS live_sessions,
+       count(*) FILTER (WHERE revoked_at IS NOT NULL OR expires_at <= now()) AS dead_sessions
+FROM   user_session;
+
 -- G15. COMPLETE TABLE ROW COUNTS — verify all 14 tables are populated
 --     (pg_stat_user_tables names the table column "relname"; n_live_tup is an estimate)
 SELECT relname    AS tablename,

@@ -1,10 +1,10 @@
 ClaimGuard database execution log
-Generated: 2026-11-09 07:46 UTC
-Server: PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
-Database: claimguard_test_log (disposable Docker container, image pgvector/pgvector:pg17)
+Generated: 2026-11-09 11:05 UTC
+Server: PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+Database: claimguard_test_log (disposable Docker container, image pgvector/pgvector:pg16)
 Every file was run with: psql -X -v ON_ERROR_STOP=1
 
-Steps: reset -> schema v4 -> seed v1 -> migration 001 -> demo passwords -> migrations 002, 003, 004 -> reference cases v2 -> read-only queries -> full queries
+Steps: reset -> schema v4 -> seed v1 -> migration 001 -> demo passwords -> migrations 002, 003, 004 -> reference cases v2 -> migration 005 -> read-only queries -> full queries
 
 ==================================================================
 == database/scripts/reset_db.sql
@@ -125,6 +125,11 @@ NOTICE:  migration 002: risk_rule_version FK already present, left unchanged
 
 ==================================================================
 == database/seed/claimguard_reference_cases_v2.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/migrations/005_db_roles.sql
 ==================================================================
 -- exit code: 0
 pgvector: 0.8.7
@@ -408,36 +413,36 @@ ORDER  BY al.occurred_at DESC
 LIMIT  30;
  audit_id |          occurred_at          | actor_type |     actor      |           action           |             target_claim             | target_user 
 ----------+-------------------------------+------------+----------------+----------------------------+--------------------------------------+-------------
-       27 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       44 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       43 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       42 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       41 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       40 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       39 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       38 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       37 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       36 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       35 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       34 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       33 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       32 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       31 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       30 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       29 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       28 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       26 | 2026-11-09 07:46:10.487346+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
-       25 | 2026-11-09 07:46:10.485622+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
-       24 | 2026-11-09 07:46:10.482106+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
-       23 | 2026-11-09 07:46:10.479998+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
-       22 | 2026-11-09 07:46:10.478071+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
-       21 | 2026-11-09 07:46:10.473713+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
-       20 | 2026-11-09 07:46:10.4715+00   | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
-       19 | 2026-11-09 07:46:10.466477+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
-       18 | 2026-11-09 07:46:10.462484+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
-       17 | 2026-11-09 07:46:10.452494+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
-       16 | 2026-11-09 07:46:10.449864+00 | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
-       15 | 2026-11-09 07:46:10.444272+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
+       27 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       44 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       43 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       42 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       41 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       40 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       39 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       38 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       37 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       36 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       35 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       34 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       33 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       32 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       31 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       30 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       29 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       28 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       26 | 2026-11-09 11:05:26.628073+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
+       25 | 2026-11-09 11:05:26.626219+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
+       24 | 2026-11-09 11:05:26.622572+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
+       23 | 2026-11-09 11:05:26.620175+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
+       22 | 2026-11-09 11:05:26.617987+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       21 | 2026-11-09 11:05:26.611542+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
+       20 | 2026-11-09 11:05:26.608613+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       19 | 2026-11-09 11:05:26.601954+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
+       18 | 2026-11-09 11:05:26.596796+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
+       17 | 2026-11-09 11:05:26.587052+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
+       16 | 2026-11-09 11:05:26.58428+00  | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
+       15 | 2026-11-09 11:05:26.579651+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
 (30 rows)
 
 SELECT claim_status,
@@ -780,7 +785,7 @@ LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
 ORDER  BY hr.age_hours DESC;
                claim_id               | claimed_amount | age_hours | current_review_state |      reviewed_at       
 --------------------------------------+----------------+-----------+----------------------+------------------------
- d1000000-0000-0000-0000-000000000003 |      125000.00 |      4107 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
+ d1000000-0000-0000-0000-000000000003 |      125000.00 |      4110 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
 (1 row)
 
 WITH RECURSIVE months (month_start, last_month) AS (
@@ -833,10 +838,10 @@ FROM   claim_events
 ORDER  BY step;
  step |          occurred_at          |       action        | actor_type |    actor     |                                                       details                                                        
 ------+-------------------------------+---------------------+------------+--------------+----------------------------------------------------------------------------------------------------------------------
-    1 | 2026-11-09 07:46:10.419715+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
-    2 | 2026-11-09 07:46:10.432882+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
-    3 | 2026-11-09 07:46:10.462484+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
-    4 | 2026-11-09 07:46:10.466477+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
+    1 | 2026-11-09 11:05:26.544021+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
+    2 | 2026-11-09 11:05:26.562976+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
+    3 | 2026-11-09 11:05:26.596796+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
+    4 | 2026-11-09 11:05:26.601954+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
 (4 rows)
 
 WITH policy_stats AS (
@@ -1060,9 +1065,9 @@ WHERE  c.claim_status <> 'DECIDED'
 ORDER  BY c.review_required DESC, c.submitted_at ASC;
                claim_id               | policy_number |   claimant    | claimed_amount | claim_status  | screening_status | review_required | risk_indicator | risk_rule_version |      submitted_at      |       age_hours       
 --------------------------------------+---------------+---------------+----------------+---------------+------------------+-----------------+----------------+-------------------+------------------------+-----------------------
- d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4107.2709543130555556
- d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3125.2709543130555556
- d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2379.2709543130555556
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4110.5923489327777778
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3128.5923489327777778
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2382.5923489327777778
 (3 rows)
 
 SELECT rule_version,
@@ -1173,7 +1178,7 @@ SELECT 'v_high_risk_aged_queue' AS view_name, claim_id::text, claimed_amount::te
 FROM   v_high_risk_aged_queue;
        view_name        |               claim_id               | claimed_amount | age_hours 
 ------------------------+--------------------------------------+----------------+-----------
- v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4107
+ v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4110
 (1 row)
 
 SELECT 'v_risk_distribution_over_time' AS view_name, assessment_day::text,
@@ -1280,7 +1285,7 @@ BEGIN
 END $$;
 NOTICE:  H2a blocked as expected (23514): approval blocked: screening status is FAILED
 NOTICE:  H2a PASS: audit rows 2 -> 2, reviews 0 -> 0
-NOTICE:  H2b inside the unit: review 61e5a474-5a8e-47c0-a88f-956c7a84de6a, decision c41ccd71-ed53-4d9a-8d74-5ae9b99407fa, audit rows now 5
+NOTICE:  H2b inside the unit: review 42839423-7c3d-498c-b3dc-6862e67ec331, decision 6fd038c6-8946-48a4-9e2b-b692c8b41829, audit rows now 5
 NOTICE:  H2b rolled back after: simulated failure of a later step (e.g. payment service)
 NOTICE:  H2b PASS: audit 3 -> 3, reviews 1 -> 1, notifications 1 -> 1, claim_status AWAITING_INFO
 DO
@@ -1301,7 +1306,7 @@ CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
                      'REJECTED', 'Hospital records could not be verified.');
              p_review_id              |            p_decision_id             |          p_notification_id           
 --------------------------------------+--------------------------------------+--------------------------------------
- 4befc0eb-0363-461f-84ae-61c16031b543 | 57f621de-9260-4012-a082-c7dcd634b25a | b2ed1d42-8f75-438f-8b49-d8e5eda43445
+ 39d00e97-e6c7-4d1a-842c-5b73acf41426 | 75d07e8d-2c44-44ce-951e-7d2d967e1900 | f4f18f02-6a27-4ee3-8b91-5575b12958b8
 (1 row)
 
 SELECT 'inside transaction' AS stage,
@@ -1607,36 +1612,36 @@ ORDER  BY al.occurred_at DESC
 LIMIT  30;
  audit_id |          occurred_at          | actor_type |     actor      |           action           |             target_claim             | target_user 
 ----------+-------------------------------+------------+----------------+----------------------------+--------------------------------------+-------------
-       27 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       44 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       43 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       42 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       41 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       40 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       39 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       38 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       37 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       36 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       35 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       34 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       33 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       32 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       31 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       30 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       29 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       28 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
-       26 | 2026-11-09 07:46:10.487346+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
-       25 | 2026-11-09 07:46:10.485622+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
-       24 | 2026-11-09 07:46:10.482106+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
-       23 | 2026-11-09 07:46:10.479998+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
-       22 | 2026-11-09 07:46:10.478071+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
-       21 | 2026-11-09 07:46:10.473713+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
-       20 | 2026-11-09 07:46:10.4715+00   | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
-       19 | 2026-11-09 07:46:10.466477+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
-       18 | 2026-11-09 07:46:10.462484+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
-       17 | 2026-11-09 07:46:10.452494+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
-       16 | 2026-11-09 07:46:10.449864+00 | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
-       15 | 2026-11-09 07:46:10.444272+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
+       27 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       44 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       43 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       42 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       41 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       40 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       39 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       38 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       37 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       36 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       35 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       34 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       33 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       32 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       31 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       30 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       29 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       28 | 2026-11-09 11:05:30.469192+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       26 | 2026-11-09 11:05:26.628073+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
+       25 | 2026-11-09 11:05:26.626219+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
+       24 | 2026-11-09 11:05:26.622572+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
+       23 | 2026-11-09 11:05:26.620175+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
+       22 | 2026-11-09 11:05:26.617987+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       21 | 2026-11-09 11:05:26.611542+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
+       20 | 2026-11-09 11:05:26.608613+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       19 | 2026-11-09 11:05:26.601954+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
+       18 | 2026-11-09 11:05:26.596796+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
+       17 | 2026-11-09 11:05:26.587052+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
+       16 | 2026-11-09 11:05:26.58428+00  | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
+       15 | 2026-11-09 11:05:26.579651+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
 (30 rows)
 
 SELECT claim_status,
@@ -1979,7 +1984,7 @@ LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
 ORDER  BY hr.age_hours DESC;
                claim_id               | claimed_amount | age_hours | current_review_state |      reviewed_at       
 --------------------------------------+----------------+-----------+----------------------+------------------------
- d1000000-0000-0000-0000-000000000003 |      125000.00 |      4107 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
+ d1000000-0000-0000-0000-000000000003 |      125000.00 |      4110 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
 (1 row)
 
 WITH RECURSIVE months (month_start, last_month) AS (
@@ -2032,10 +2037,10 @@ FROM   claim_events
 ORDER  BY step;
  step |          occurred_at          |       action        | actor_type |    actor     |                                                       details                                                        
 ------+-------------------------------+---------------------+------------+--------------+----------------------------------------------------------------------------------------------------------------------
-    1 | 2026-11-09 07:46:10.419715+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
-    2 | 2026-11-09 07:46:10.432882+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
-    3 | 2026-11-09 07:46:10.462484+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
-    4 | 2026-11-09 07:46:10.466477+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
+    1 | 2026-11-09 11:05:26.544021+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
+    2 | 2026-11-09 11:05:26.562976+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
+    3 | 2026-11-09 11:05:26.596796+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
+    4 | 2026-11-09 11:05:26.601954+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
 (4 rows)
 
 WITH policy_stats AS (
@@ -2259,9 +2264,9 @@ WHERE  c.claim_status <> 'DECIDED'
 ORDER  BY c.review_required DESC, c.submitted_at ASC;
                claim_id               | policy_number |   claimant    | claimed_amount | claim_status  | screening_status | review_required | risk_indicator | risk_rule_version |      submitted_at      |       age_hours       
 --------------------------------------+---------------+---------------+----------------+---------------+------------------+-----------------+----------------+-------------------+------------------------+-----------------------
- d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4107.2711498330555556
- d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3125.2711498330555556
- d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2379.2711498330555556
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4110.5925464508333333
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3128.5925464508333333
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2382.5925464508333333
 (3 rows)
 
 SELECT rule_version,
@@ -2372,7 +2377,7 @@ SELECT 'v_high_risk_aged_queue' AS view_name, claim_id::text, claimed_amount::te
 FROM   v_high_risk_aged_queue;
        view_name        |               claim_id               | claimed_amount | age_hours 
 ------------------------+--------------------------------------+----------------+-----------
- v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4107
+ v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4110
 (1 row)
 
 SELECT 'v_risk_distribution_over_time' AS view_name, assessment_day::text,
@@ -2464,7 +2469,41 @@ FROM   notification
 WHERE  notification_id = '91000000-0000-0000-0000-000000000005';
            notification_id            | notification_type |            read_at            |         dismissed_at          
 --------------------------------------+-------------------+-------------------------------+-------------------------------
- 91000000-0000-0000-0000-000000000005 | CLAIM_APPROVED    | 2026-11-09 07:46:16.165992+00 | 2026-11-09 07:46:16.167596+00
+ 91000000-0000-0000-0000-000000000005 | CLAIM_APPROVED    | 2026-11-09 11:05:33.196048+00 | 2026-11-09 11:05:33.198115+00
+(1 row)
+
+INSERT INTO user_session (user_id, token_hash, created_at, expires_at, revoked_at)
+VALUES ('a3000000-0000-0000-0000-000000000001', repeat('e', 64),
+        now() - interval '10 days', now() - interval '9 days', NULL),            -- expired
+       ('a3000000-0000-0000-0000-000000000002', repeat('f', 64),
+        now() - interval '2 days',  now() + interval '1 day',  now() - interval '1 day');
+INSERT 0 2
+SELECT 'before DELETE' AS stage,
+       count(*) FILTER (WHERE revoked_at IS NULL AND expires_at > now())     AS live_sessions,
+       count(*) FILTER (WHERE revoked_at IS NOT NULL OR expires_at <= now()) AS dead_sessions
+FROM   user_session;
+     stage     | live_sessions | dead_sessions 
+---------------+---------------+---------------
+ before DELETE |             0 |             2
+(1 row)
+
+DELETE FROM user_session
+WHERE  revoked_at IS NOT NULL OR expires_at <= now()
+RETURNING session_id, user_id, expires_at, revoked_at;
+              session_id              |               user_id                |          expires_at           |          revoked_at           
+--------------------------------------+--------------------------------------+-------------------------------+-------------------------------
+ 79298060-840b-4d9d-9620-6f37d807b614 | a3000000-0000-0000-0000-000000000001 | 2026-10-31 11:05:33.200719+00 | 
+ d1f8f6db-381e-4b8d-a229-94c707e02200 | a3000000-0000-0000-0000-000000000002 | 2026-11-10 11:05:33.200719+00 | 2026-11-08 11:05:33.200719+00
+(2 rows)
+
+DELETE 2
+SELECT 'after DELETE' AS stage,
+       count(*) FILTER (WHERE revoked_at IS NULL AND expires_at > now())     AS live_sessions,
+       count(*) FILTER (WHERE revoked_at IS NOT NULL OR expires_at <= now()) AS dead_sessions
+FROM   user_session;
+    stage     | live_sessions | dead_sessions 
+--------------+---------------+---------------
+ after DELETE |             0 |             0
 (1 row)
 
 SELECT relname    AS tablename,
@@ -2561,7 +2600,7 @@ BEGIN
 END $$;
 NOTICE:  H2a blocked as expected (23514): approval blocked: screening status is FAILED
 NOTICE:  H2a PASS: audit rows 2 -> 2, reviews 0 -> 0
-NOTICE:  H2b inside the unit: review 81a3bfae-57b3-4c6a-9e16-b217702b90aa, decision 3d2b133f-9936-489c-9ff3-54e032b50e34, audit rows now 5
+NOTICE:  H2b inside the unit: review 92a8bbfc-3bf7-4f03-98ba-312bf0488135, decision 56584745-a08f-4561-b359-5be7c08795c9, audit rows now 5
 NOTICE:  H2b rolled back after: simulated failure of a later step (e.g. payment service)
 NOTICE:  H2b PASS: audit 3 -> 3, reviews 1 -> 1, notifications 1 -> 1, claim_status AWAITING_INFO
 DO
@@ -2582,7 +2621,7 @@ CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
                      'REJECTED', 'Hospital records could not be verified.');
              p_review_id              |            p_decision_id             |          p_notification_id           
 --------------------------------------+--------------------------------------+--------------------------------------
- ebbad168-fc02-434a-958e-4a7019627f1b | 370259bf-f86e-4966-8f46-3192680e2f27 | d4358f34-cb8c-457f-805e-40a884e055ad
+ 987cb34a-7b34-45c8-9f66-87e95f7c2325 | dbd93027-300c-44a7-bb7f-510d367bc143 | b4a610d6-4127-4eb0-af88-e8a6da824550
 (1 row)
 
 SELECT 'inside transaction' AS stage,
@@ -2621,7 +2660,7 @@ BEGIN
                        v_assessment, v_status, v_risk);
   RAISE NOTICE 'H4 claim 4 screened: assessment %, status %, risk %', v_assessment, v_status, v_risk;
 END $$;
-NOTICE:  H4 claim 4 screened: assessment e83ae5bf-d125-45ad-a409-286e52dfe156, status COMPLETED, risk HIGH
+NOTICE:  H4 claim 4 screened: assessment 44a5f63f-2c3e-4436-bee1-762a37c5897e, status COMPLETED, risk HIGH
 DO
 SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version,
        m.match_rank, round(m.similarity_score::numeric, 4) AS similarity,
@@ -2646,7 +2685,7 @@ CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
                      'REJECTED', 'Retry screening matched a staged-collision pattern; repair invoices could not be verified.');
              p_review_id              |            p_decision_id             |          p_notification_id           
 --------------------------------------+--------------------------------------+--------------------------------------
- 6716c5de-8303-4768-babf-ca638b69b633 | d98608a0-c039-414e-a733-3d0fec75cf1a | 82b57fc3-fc1b-48c9-8ccf-a28d9c44c6ae
+ da68a8d0-51d3-4207-b8af-1addfdd54639 | d3093aea-bb5b-4d70-bf29-63a05a8463d5 | f9256090-6f0d-4c9a-abcc-3e794d33c9b1
 (1 row)
 
 COMMIT;
@@ -2673,21 +2712,21 @@ ORDER  BY al.audit_id;
  CLAIM_SUBMITTED     | USER       | Mohan Das    | {"source": "database_trigger", "claim_status": "SUBMITTED"}
  SCREENING_FAILED    | SYSTEM     |              | {"source": "database_trigger", "status": "FAILED", "attempt_no": 1}
  SCREENING_COMPLETED | SYSTEM     |              | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 2}
- REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "6716c5de-8303-4768-babf-ca638b69b633", "review_action": "REJECTED"}
- DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "d98608a0-c039-414e-a733-3d0fec75cf1a", "decision_status": "REJECTED"}
+ REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "da68a8d0-51d3-4207-b8af-1addfdd54639", "review_action": "REJECTED"}
+ DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "d3093aea-bb5b-4d70-bf29-63a05a8463d5", "decision_status": "REJECTED"}
 (5 rows)
 
 CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, NULL::vector, 3,
                      'Embedding service unavailable: HTTP 503 (attempt 1)');
            p_assessment_id            | p_status | p_risk_indicator 
 --------------------------------------+----------+------------------
- b346d7ee-6945-40ca-8ad2-85f3b8e3081f | FAILED   | 
+ e8c2666b-eeb2-44ec-bcb1-3d354a7b55ff | FAILED   | 
 (1 row)
 
 CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, '[0.1,0.2,0.3]'::vector, 3);
            p_assessment_id            | p_status | p_risk_indicator 
 --------------------------------------+----------+------------------
- d80fdb12-693a-4fc5-90d5-242ceb477060 | FAILED   | 
+ 13e8a64f-44e8-4b92-9367-8024546ab427 | FAILED   | 
 (1 row)
 
 SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version, a.failure_reason,

@@ -80,7 +80,7 @@ Summarised from [`docs/ClaimGuard_FINAL_SRS.pdf`](docs/ClaimGuard_FINAL_SRS.pdf)
 | ID | Requirement | Implemented in |
 |---|---|---|
 | FR-01 | Sign-in with hashed passwords | `api/auth/login`, `lib/auth.ts`, migration 001 (`user_session`) |
-| FR-02 | Every server operation checks session, role and ownership | `requireRole` on every route; ownership filtered in SQL; role triggers |
+| FR-02 | Every server operation checks session, role and ownership | `requireRole` on every route; ownership filtered in SQL; role triggers; PostgreSQL roles and GRANTs (migration 005) |
 | FR-03 | Submit a claim on an owned active policy with valid date, amount and description | `POST /api/claims`, `trg_claim_insert_guard`, composite ownership FK |
 | FR-04 | Policyholders see only their own claims and status | `/my-claims`, `/my-claims/[id]` |
 | FR-05 | Commit the claim as SUBMITTED/PENDING, then screen it | `lib/screening.ts` → `CALL sp_screen_claim` |
@@ -178,6 +178,7 @@ Database objects after the full apply order (counted from the catalog):
 |---|---|---|
 | **DDL** | [`database/schema/claimguard_schema_v4.sql`](database/schema/claimguard_schema_v4.sql) | `CREATE TABLE` for 14 tables, `CREATE EXTENSION vector`, generated identity keys, `vector(384)` columns |
 | **ALTER** | schema v4, migrations [002](database/migrations/002_risk_rule_fk_and_procedure.sql), [003](database/migrations/003_reference_case_versioning.sql) | `ALTER TABLE screening_assessment ADD CONSTRAINT fk_assessment_risk_rule_version …`; `ALTER TABLE reference_fraud_case ADD COLUMN supersedes_case_id …` |
+| **DML** | seed files, app routes, query file | INSERT (seed, `POST /api/claims`, `INSERT … SELECT` §H1); UPDATE (claim status, notification read/dismiss §G14, user activation); DELETE of expired/revoked sessions (§G14b: `DELETE … RETURNING`). Business tables refuse DELETE by design (§G10) |
 | **DROP** | [`database/scripts/reset_db.sql`](database/scripts/reset_db.sql) | Views, then procedures, child tables before parents, then functions, all without CASCADE; refuses to run on a database whose name doesn't look disposable |
 | **Constraints** | schema v4 | Composite FK `claim(policy_id, claimant_id) → policy(policy_id, holder_id)`; CHECKs such as `ck_assessment_failed` (a FAILED attempt carries no risk); partial unique `ux_risk_rule_one_active` |
 | **Indexes** | schema v4, migration 003 | B-tree query paths (`ix_claim_queue`); **GIN** `ix_claim_description_fts`, `ix_ref_case_fts`; **HNSW** `ix_ref_case_embedding_hnsw` (cosine, partial: active and confirmed only) |
@@ -185,6 +186,7 @@ Database objects after the full apply order (counted from the catalog):
 | **Functions** | schema v4, migrations | `fn_compute_claim_risk`, `fn_assert_approvable`, `fn_session_principal`, `fn_user_has_role`, plus trigger functions |
 | **Procedures** | migrations 002, 003 | `sp_screen_claim`, `sp_decide_claim`, `sp_revise_reference_case` |
 | **Triggers** | schema v4, migrations 001–004 | State machine, immutability, append-only, role checks, HIGH-risk flag, audit writers, information-response guard, last-admin guard |
+| **Database roles** | [migration 005](database/migrations/005_db_roles.sql) | `CREATE ROLE claimguard_app` (no DELETE on business tables, no TRUNCATE, no DDL, EXECUTE on the procedures) and `claimguard_readonly` (reporting views only); `GRANT`/`REVOKE`. The web app runs as a login role in `claimguard_app` |
 | **Transactions** | migrations; app routes; query file §H | Every migration is one `BEGIN … COMMIT`. The app wraps `CALL sp_*` in `BEGIN/COMMIT` with `ROLLBACK` on error. §H shows `ROLLBACK` discarding audit rows. `SELECT … FOR UPDATE` / `FOR SHARE` serialize work on a claim and lock the active rule. |
 
 The complete query collection is [`database/queries/claimguard_queries_v1.sql`](database/queries/claimguard_queries_v1.sql),
@@ -256,7 +258,7 @@ Insurance-Claims-Processing/
 ├── embedding-service/       FastAPI embedding service, seed/re-embed/calibration scripts
 ├── database/
 │   ├── schema/              claimguard_schema_v4.sql (base schema)
-│   ├── migrations/          001 sessions · 002 FK + procedures · 003 versioning · 004 workflow guards
+│   ├── migrations/          001 sessions · 002 FK + procedures · 003 versioning · 004 workflow guards · 005 roles
 │   ├── seed/                synthetic data, demo passwords, reference cases v2 (real embeddings)
 │   ├── queries/             query collection (A–H), read-only subset, execution log
 │   ├── scripts/             reset_db.sql
@@ -283,10 +285,17 @@ Create an empty database (any name; a disposable one for testing), then apply th
 | 6 | `database/migrations/003_reference_case_versioning.sql` | Reference-case versions, audit, keyword index |
 | 7 | `database/migrations/004_workflow_guards.sql` | Information-response rules, HIGH-risk approval rule, admin guard |
 | 8 | `database/seed/claimguard_reference_cases_v2.sql` | 18 reference cases with real embeddings + rule `v2.0-minilm` |
+| 9 | `database/migrations/005_db_roles.sql` | Database roles `claimguard_app` and `claimguard_readonly` with least-privilege GRANTs |
 
 ```powershell
 psql -v ON_ERROR_STOP=1 -d claimguard_demo -f database/schema/claimguard_schema_v4.sql
-# ...repeat for files 2-8 in order
+# ...repeat for files 2-9 in order
+```
+
+Then create the login role the web app uses (choose your own password; never commit it), and use it in `DATABASE_URL`:
+
+```sql
+CREATE ROLE claimguard_web LOGIN PASSWORD '<password>' IN ROLE claimguard_app;
 ```
 
 Optional:
@@ -326,7 +335,7 @@ npm run dev                         # http://localhost:3000
 
 | Variable | Used by | Default / example |
 |---|---|---|
-| `DATABASE_URL` | Next.js, `reembed_reference_cases.py` | `postgresql://postgres:<password>@localhost:5432/claimguard_demo` |
+| `DATABASE_URL` | Next.js, `reembed_reference_cases.py` | `postgresql://claimguard_web:<password>@localhost:5432/claimguard_demo` (the limited role from migration 005) |
 | `EMBEDDING_SERVICE_URL` | Next.js | `http://127.0.0.1:8001` |
 | `SCREENING_TOP_K` | Next.js | `5` (1–40) |
 | `EMBEDDING_PORT`, `EMBEDDING_HOST` | embedding service | `8001`, `127.0.0.1` |
@@ -375,8 +384,8 @@ Captured headlessly with [`scripts/screenshots.mjs`](scripts/screenshots.mjs) (P
 
 | Suite | Result (observed) |
 |---|---|
-| Database tests: [`database/tests/claimguard_tests_v4.py`](database/tests/claimguard_tests_v4.py), schema v4 + migrations 001–004 on PostgreSQL 16 | **153 / 153 passed** |
-| API tests: [`backend/tests/api.test.mjs`](backend/tests/api.test.mjs), 4 demo roles against the running app | **23 / 23 passed** |
+| Database tests: [`database/tests/claimguard_tests_v4.py`](database/tests/claimguard_tests_v4.py), schema v4 + migrations 001–005 on PostgreSQL 16 | **162 / 162 passed** |
+| API tests: [`backend/tests/api.test.mjs`](backend/tests/api.test.mjs), 4 demo roles against the running app, connected as the limited `claimguard_web` role | **23 / 23 passed** |
 | Semantic sanity check (AC-15): HIGH flag on 16 synthetic sentences | precision 1.00, recall 0.75 (thresholds tuned on the same sample) |
 | `npm run typecheck`, `npm run build` | pass |
 
@@ -390,7 +399,7 @@ Based on the git history of this repository.
 | Member | Contributions |
 |---|---|
 | **Hrushikesh Karnam** (PES1UG24CS668) | SRS v2.0 and system architecture document; ER model and relational schema v4 (`claimguard_schema_v4.sql`: tables, constraints, triggers, views, HNSW index); synthetic seed data; the initial SQL query collection and execution evidence; the database test suite (`claimguard_tests_v4.py`); the initial Next.js dashboard and API; repository structure and setup documentation |
-| **Nishant Hegde** (PES1UG24CS681) | Authentication and database sessions (migration 001); migrations 002–004 and the procedures `sp_screen_claim`, `sp_decide_claim`, `sp_revise_reference_case`; the embedding service, reference-case seed and vector screening; claim submission, review, information-response, notification and admin workflows; reference-case management; the reset script, query fixes (recursive CTE, Section H), test extensions, API tests, diagrams v6 and this documentation |
+| **Nishant Hegde** (PES1UG24CS681) | Authentication and database sessions (migration 001); migrations 002–005 (procedures, versioning, workflow guards, database roles) and the procedures `sp_screen_claim`, `sp_decide_claim`, `sp_revise_reference_case`; the embedding service, reference-case seed and vector screening; claim submission, review, information-response, notification and admin workflows; reference-case management; the reset script, query fixes (recursive CTE, Section H), test extensions, API tests, diagrams v6 and this documentation |
 
 ## Known limitations
 

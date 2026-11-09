@@ -5,8 +5,8 @@ All results below were observed on the runs recorded in [`test_results.txt`](tes
 
 | Suite | What it covers | Result |
 |---|---|---|
-| Database tests (`database/tests/claimguard_tests_v4.py`) | Constraints, triggers, state machine, procedures, migrations 001–004, pgvector/HNSW | **153 / 153 passed**, 0 failed |
-| API tests (`backend/tests/api.test.mjs`) | Sign-in, role and ownership checks, full claim workflow over HTTP | **23 / 23 passed**, 0 failed (4.5 s) |
+| Database tests (`database/tests/claimguard_tests_v4.py`) | Constraints, triggers, state machine, procedures, migrations 001–005 (incl. database roles), pgvector/HNSW | **162 / 162 passed**, 0 failed |
+| API tests (`backend/tests/api.test.mjs`) | Sign-in, role and ownership checks, full claim workflow over HTTP | **23 / 23 passed**, 0 failed (17.3 s) |
 | Semantic sanity check (`embedding-service/scripts/calibrate_thresholds.py`) | HIGH flag on 8 fraud-like and 8 ordinary synthetic claims (AC-15) | see below |
 | `npm run typecheck`, `npm run build` | TypeScript and production build of `backend/` | both exit 0 |
 
@@ -15,11 +15,14 @@ All results below were observed on the runs recorded in [`test_results.txt`](tes
 - PostgreSQL 16.15 with pgvector, Docker image `pgvector/pgvector:pg16`; a fresh disposable database per suite.
 - Embedding service: `sentence-transformers/all-MiniLM-L6-v2` (`normalized-v1`, 384 dimensions) on CPU.
 - Next.js 16.4.3 dev server, Node.js 22, Python 3.13, Windows 11.
+- The API suite ran with the web app connected as `claimguard_web`, a login role in `claimguard_app`
+  (migration 005: no DELETE on business tables, no TRUNCATE, no DDL). The database suite connects as the owner
+  and switches to the limited roles with `SET LOCAL ROLE` for the privilege checks.
 
 ## How to run
 
 Database tests (the runner drops and recreates the named database, then applies schema v4 and
-migrations 001–004; add `--no-migrations` to test the base schema only):
+migrations 001–005; add `--no-migrations` to test the base schema only):
 
 ```powershell
 cd database/tests
@@ -55,8 +58,8 @@ fraud detection. High similarity is not proof of fraud, and no match is not proo
 
 ## HNSW index measurement (NFR-06)
 
-From the database suite (3000 uniform-random 384-dimension vectors, 30 random queries): ef_search=40 -> 0.69; ef_search=200 -> 1.00.
-The figure for `ef_search=40` varied between 0.67 and 0.69 across our runs, because the 3000 vectors are drawn with
+From the database suite (3000 uniform-random 384-dimension vectors, 30 random queries): ef_search=40 -> 0.71; ef_search=200 -> 1.00.
+The figure for `ef_search=40` varied between 0.67 and 0.71 across our runs, because the 3000 vectors are drawn with
 SQL `random()`. The top-k query plan uses `ix_ref_case_embedding_hnsw`. Random vectors are a worst case for HNSW;
 real sentence embeddings cluster, but recall was not measured on them.
 
@@ -368,6 +371,22 @@ Requirements: FR-01, FR-02, NFR-01
 | with a second active admin, deactivating one admin is allowed | PASS |
 | deactivation revokes live sessions (trigger) and audits USER_STATUS_CHANGED with the admin as actor | PASS |
 | a session cannot be issued to an inactive user | PASS |
+| DML DELETE: expired and revoked sessions are deleted, the live one is kept | PASS |
+
+### migration 005: database roles and privileges
+
+Requirements: FR-02, NFR-01 (database-level RBAC)
+
+| Test | Result |
+|---|---|
+| claimguard_app cannot DELETE claims (no DELETE privilege, before any trigger) | PASS |
+| claimguard_app cannot TRUNCATE | PASS |
+| claimguard_app cannot UPDATE the audit log | PASS |
+| claimguard_app cannot change the schema | PASS |
+| claimguard_app can run the whole workflow: insert, CALL both procedures, triggers write audit | PASS |
+| claimguard_readonly can read the reporting views | PASS |
+| claimguard_readonly cannot read base tables | PASS |
+| claimguard_readonly cannot CALL procedures | PASS |
 
 ## Bugs found by these tests and fixed
 

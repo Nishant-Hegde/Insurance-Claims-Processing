@@ -1,15 +1,15 @@
 ClaimGuard test results (raw output, unedited)
-Recorded: 2026-11-09 08:36 UTC on Windows 11
+Recorded: 2026-11-09 11:06 UTC on Windows 11
 Database: PostgreSQL 16.15 + pgvector (Docker image pgvector/pgvector:pg16), fresh disposable databases
 Embedding service: sentence-transformers/all-MiniLM-L6-v2 (normalized-v1), CPU
-Web app: Next.js 16.4.3 dev server; Node v22.19.0; Python 3.13
+Web app: Next.js 16.4.3 dev server connected as claimguard_web (member of claimguard_app, migration 005); Node v22.19.0; Python 3.13
 
 ######################################################################
 # 1. Database tests: database/tests/claimguard_tests_v4.py
 #    python claimguard_tests_v4.py claimguard_test_suite
-#    (recreates the database, applies schema v4 + migrations 001-004)
+#    (recreates the database, applies schema v4 + migrations 001-005)
 ######################################################################
-applied: claimguard_schema_v4.sql, 001_user_session_auth.sql, 002_risk_rule_fk_and_procedure.sql, 003_reference_case_versioning.sql, 004_workflow_guards.sql
+applied: claimguard_schema_v4.sql, 001_user_session_auth.sql, 002_risk_rule_fk_and_procedure.sql, 003_reference_case_versioning.sql, 004_workflow_guards.sql, 005_db_roles.sql
 == claims / domain constraints (FR-03, FR-13, AC-01, AC-02)
 PASS AC-01 valid claim stored as SUBMITTED/PENDING
 PASS AC-02 negative amount rejected
@@ -135,7 +135,7 @@ PASS queue shows failed attempt with NULL risk; no decided rows; summary total =
    plan nodes: ['->  Index Scan using ix_ref_case_embedding_hnsw on reference_fraud_case  (cost=470.09..609', 'Filter: (embedding_model_id = 1)']
 PASS top-k query uses ix_ref_case_embedding_hnsw at ~3000 rows
 PASS HNSW top-k returns k=5 rows for all 30 queries
-   MEASURED recall@5 vs exact scan, 30 random queries on 3000 uniform-random 384-d vectors: ef_search=40 -> 0.69; ef_search=200 -> 1.00
+   MEASURED recall@5 vs exact scan, 30 random queries on 3000 uniform-random 384-d vectors: ef_search=40 -> 0.71; ef_search=200 -> 1.00
 == SRS v2.0 extensions (risk rules, responses, notifications, search, reports)
 PASS versioned rule, notification soft dismissal and analytics/search views are queryable
 PASS notification content cannot be rewritten
@@ -183,152 +183,162 @@ PASS the last active admin cannot be deactivated
 PASS with a second active admin, deactivating one admin is allowed
 PASS deactivation revokes live sessions (trigger) and audits USER_STATUS_CHANGED with the admin as actor
 PASS a session cannot be issued to an inactive user
+PASS DML DELETE: expired and revoked sessions are deleted, the live one is kept
+== migration 005: database roles and privileges (FR-02, NFR-01)
+PASS claimguard_app cannot DELETE claims (no DELETE privilege, before any trigger)
+PASS claimguard_app cannot TRUNCATE
+PASS claimguard_app cannot UPDATE the audit log
+PASS claimguard_app cannot change the schema
+PASS claimguard_app can run the whole workflow: insert, CALL both procedures, triggers write audit
+PASS claimguard_readonly can read the reporting views
+PASS claimguard_readonly cannot read base tables
+PASS claimguard_readonly cannot CALL procedures
 
-TOTAL 153  PASS 153  FAIL 0
+TOTAL 162  PASS 162  FAIL 0
 
 ######################################################################
 # 2. API tests: backend/tests/api.test.mjs
 #    API_BASE_URL=http://127.0.0.1:3100 node --test tests/api.test.mjs
 #    Database built with the full apply order: schema v4, seed v1, 001,
-#    demo passwords, 002, 003, 004, reference cases v2
+#    demo passwords, 002, 003, 004, reference cases v2, 005
 ######################################################################
 TAP version 13
 # Subtest: 01 each demo role signs in and /api/auth/me returns its role
 ok 1 - 01 each demo role signs in and /api/auth/me returns its role
   ---
-  duration_ms: 1351.276
+  duration_ms: 2769.9184
   type: 'test'
   ...
 # Subtest: 02 wrong password and deactivated user get the same 401
 ok 2 - 02 wrong password and deactivated user get the same 401
   ---
-  duration_ms: 537.0915
+  duration_ms: 1064.2547
   type: 'test'
   ...
 # Subtest: 03 no session: API returns 401, pages redirect to /login
 ok 3 - 03 no session: API returns 401, pages redirect to /login
   ---
-  duration_ms: 16.6765
+  duration_ms: 32.6056
   type: 'test'
   ...
 # Subtest: 04 policyholder cannot read another policyholder's claim (404, nothing revealed)
 ok 4 - 04 policyholder cannot read another policyholder's claim (404, nothing revealed)
   ---
-  duration_ms: 63.6613
+  duration_ms: 1877.5763
   type: 'test'
   ...
 # Subtest: 05 policyholder cannot claim against someone else's policy (403)
 ok 5 - 05 policyholder cannot claim against someone else's policy (403)
   ---
-  duration_ms: 42.0206
+  duration_ms: 154.3496
   type: 'test'
   ...
 # Subtest: 06 policyholder is refused staff APIs (403)
 ok 6 - 06 policyholder is refused staff APIs (403)
   ---
-  duration_ms: 56.6126
+  duration_ms: 281.5417
   type: 'test'
   ...
 # Subtest: 07 adjuster is refused admin APIs (403) and admin pages (redirect)
 ok 7 - 07 adjuster is refused admin APIs (403) and admin pages (redirect)
   ---
-  duration_ms: 369.2743
+  duration_ms: 2907.979
   type: 'test'
   ...
 # Subtest: 08 admin cannot record a review (only claims adjusters decide)
 ok 8 - 08 admin cannot record a review (only claims adjusters decide)
   ---
-  duration_ms: 33.1153
+  duration_ms: 1761.8615
   type: 'test'
   ...
 # Subtest: 09 invalid claims are rejected with readable messages
 ok 9 - 09 invalid claims are rejected with readable messages
   ---
-  duration_ms: 116.8827
+  duration_ms: 196.8037
   type: 'test'
   ...
 # Subtest: 10 policyholder submits a paraphrased fraud pattern; response hides the risk result
 ok 10 - 10 policyholder submits a paraphrased fraud pattern; response hides the risk result
   ---
-  duration_ms: 192.2247
+  duration_ms: 207.5664
   type: 'test'
   ...
 # Subtest: 11 adjuster sees MATCHES_FOUND, HIGH risk, review_required and the matching pattern ranked first
 ok 11 - 11 adjuster sees MATCHES_FOUND, HIGH risk, review_required and the matching pattern ranked first
   ---
-  duration_ms: 102.0816
+  duration_ms: 91.5141
   type: 'test'
   ...
 # Subtest: 12 policyholder's view of the same claim has no fraud evidence
 ok 12 - 12 policyholder's view of the same claim has no fraud evidence
   ---
-  duration_ms: 27.372
+  duration_ms: 54.5399
   type: 'test'
   ...
 # Subtest: 13 an unrelated claim scores low
 ok 13 - 13 an unrelated claim scores low
   ---
-  duration_ms: 165.4883
+  duration_ms: 179.5413
   type: 'test'
   ...
 # Subtest: 14 /api/similar ranks the matching pattern first for an ad-hoc description
 ok 14 - 14 /api/similar ranks the matching pattern first for an ad-hoc description
   ---
-  duration_ms: 64.6344
+  duration_ms: 92.0264
   type: 'test'
   ...
 # Subtest: 15 approving the HIGH-risk claim straight away is blocked by the database
 ok 15 - 15 approving the HIGH-risk claim straight away is blocked by the database
   ---
-  duration_ms: 44.7353
+  duration_ms: 81.1429
   type: 'test'
   ...
 # Subtest: 16 adjuster requests information; claim waits for the policyholder
 ok 16 - 16 adjuster requests information; claim waits for the policyholder
   ---
-  duration_ms: 109.2569
+  duration_ms: 149.434
   type: 'test'
   ...
 # Subtest: 17 approval is still blocked while the request is unanswered
 ok 17 - 17 approval is still blocked while the request is unanswered
   ---
-  duration_ms: 41.3133
+  duration_ms: 46.9385
   type: 'test'
   ...
 # Subtest: 18 another policyholder cannot answer the request
 ok 18 - 18 another policyholder cannot answer the request
   ---
-  duration_ms: 55.7727
+  duration_ms: 1654.2772
   type: 'test'
   ...
 # Subtest: 19 the claimant answers once; the claim returns to UNDER_REVIEW; a second answer is refused
 ok 19 - 19 the claimant answers once; the claim returns to UNDER_REVIEW; a second answer is refused
   ---
-  duration_ms: 151.6216
+  duration_ms: 326.6983
   type: 'test'
   ...
 # Subtest: 20 approval now succeeds; the decision is final
 ok 20 - 20 approval now succeeds; the decision is final
   ---
-  duration_ms: 108.565
+  duration_ms: 206.6262
   type: 'test'
   ...
 # Subtest: 21 policyholder reads and dismisses own notifications; another user cannot touch them
 ok 21 - 21 policyholder reads and dismisses own notifications; another user cannot touch them
   ---
-  duration_ms: 213.5457
+  duration_ms: 2026.6477
   type: 'test'
   ...
 # Subtest: 22 admin issues a policy; duplicate number and non-policyholder holder are refused
 ok 22 - 22 admin issues a policy; duplicate number and non-policyholder holder are refused
   ---
-  duration_ms: 86.7849
+  duration_ms: 155.1016
   type: 'test'
   ...
 # Subtest: 23 deactivating a user revokes their live session; reactivation restores sign-in
 ok 23 - 23 deactivating a user revokes their live session; reactivation restores sign-in
   ---
-  duration_ms: 430.8583
+  duration_ms: 796.4086
   type: 'test'
   ...
 1..23
@@ -339,7 +349,7 @@ ok 23 - 23 deactivating a user revokes their live session; reactivation restores
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 4478.7144
+# duration_ms 17292.4325
 
 ######################################################################
 # 3. Semantic sanity check (SRS AC-15): embedding-service/scripts/calibrate_thresholds.py
@@ -370,7 +380,7 @@ ORDINARY
   min 0.374  max 0.573  mean 0.431
 
 ######################################################################
-# 4. npm run typecheck / npm run build (backend/)
+# 4. npm run typecheck / npm run build (backend/; no backend code changed since)
 ######################################################################
 
 > claimguard-web@1.0.0 typecheck

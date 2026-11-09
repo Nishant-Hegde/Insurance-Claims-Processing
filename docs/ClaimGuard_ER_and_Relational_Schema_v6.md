@@ -2,8 +2,8 @@
 
 **Requirements baseline:** `ClaimGuard_FINAL_SRS.pdf`, SRS v2.0 (23 October 2026).
 **Database implementation:** `database/schema/claimguard_schema_v4.sql` plus migrations
-`001_user_session_auth.sql`, `002_risk_rule_fk_and_procedure.sql`, `003_reference_case_versioning.sql`
-and `004_workflow_guards.sql`.
+`001_user_session_auth.sql`, `002_risk_rule_fk_and_procedure.sql`, `003_reference_case_versioning.sql`,
+`004_workflow_guards.sql` and `005_db_roles.sql` (database roles and privileges; no schema change).
 **Column-level reference:** [DATA_DICTIONARY.md](DATA_DICTIONARY.md) (every column, type and constraint, read from the database catalog).
 
 The two diagrams below are the official ones. They describe the database after all four migrations:
@@ -102,7 +102,7 @@ audit context. Controlled denormalization is backed by constraints:
 | SRS requirement | Implementation | Status |
 |---|---|---|
 | FR-01 Authentication | bcrypt hashes; `user_session` stores token hashes; `fn_session_principal` (001) | Implemented, tested |
-| FR-02 Role/ownership authorization | Every route calls `requireRole`; ownership filtered in SQL; role triggers in the database | Implemented, tested (API tests 03–08) |
+| FR-02 Role/ownership authorization | Every route calls `requireRole`; ownership filtered in SQL; role triggers in the database; PostgreSQL roles `claimguard_app` / `claimguard_readonly` with least-privilege GRANTs (005) | Implemented, tested (API tests 03–08; 8 privilege tests) |
 | FR-03 Claim submission | `POST /api/claims`; `trg_claim_insert_guard`; composite ownership FK | Implemented, tested |
 | FR-04 Claim tracking | `/my-claims`, `/my-claims/[id]` with UNION ALL timeline | Implemented, tested |
 | FR-05 Screening orchestration | Claim committed as SUBMITTED/PENDING, then embed + `CALL sp_screen_claim` | Implemented, tested |

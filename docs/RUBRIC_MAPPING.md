@@ -1,8 +1,8 @@
 # ClaimGuard — rubric mapping (DBMS Level 3, 50 marks)
 
 Each rubric item, the files, pages and queries that satisfy it, and a demo that fits in under a minute.
-The **Self-assessment** column is our honest reading of the evidence, not a grade; items marked ⚠
-are weak or at risk and are explained in [Weak or missing](#weak-or-missing).
+The **Self-assessment** column is our honest reading of the evidence, not a grade. The item marked ⚠
+is at risk and is explained in [Weak or missing](#weak-or-missing), together with the two gaps already fixed.
 
 Demo setup: a database built with the apply order in the README (we use `claimguard_demo`), the
 embedding service on port 8001, and `npm run dev` in `backend/`. "psql" below means
@@ -17,13 +17,13 @@ embedding service on port 8001, and `npm run dev` in `backend/`. "psql" below me
 | 3 | SQL database implementation – DDL with constraints | 4 | Correct |
 | 4 | NoSQL/Vector database creation | 4 | Correct |
 | 5 | Technology justification | 1 | Correct |
-| 6 | DML operations | 4 | ⚠ Partially at risk: no *successful* DELETE is demonstrated |
+| 6 | DML operations | 4 | Correct (INSERT, UPDATE and a real DELETE in §G14b; business tables refuse DELETE by design) |
 | 7 | Nested/correlated/recursive queries, JOIN queries | 4 | Correct |
 | 8 | Advanced SQL – procedure/function, trigger, CTE | 6 | Correct |
 | 9 | NoSQL/Vector feature, RUD (Read, Update, Delete) | 7 | ⚠ Read correct; Update and Delete are versioned / soft by design and must be explained |
 | 10 | Next.js interface | 3 | Correct |
 | 11 | Backend/API and database integration | 2 | Correct |
-| 12 | Authentication – front end, ≥ 2 roles, RBAC in the database | 4 | ⚠ Correct at application + trigger level; no PostgreSQL `GRANT`/RLS |
+| 12 | Authentication – front end, ≥ 2 roles, RBAC in the database | 4 | Correct (application roles enforced by triggers + PostgreSQL roles and GRANTs, migration 005) |
 | 13 | Documentation, Git/GitHub | 2 | Correct |
 | 14 | Originality, individual contribution, modification/viva | 4 | Correct if the modification goes smoothly; see the practice list |
 
@@ -55,6 +55,7 @@ embedding service on port 8001, and `npm run dev` in `backend/`. "psql" below me
   - [`database/schema/claimguard_schema_v4.sql`](../database/schema/claimguard_schema_v4.sql): `CREATE TABLE` ×14, `CREATE EXTENSION`, `CREATE INDEX`, `CREATE VIEW`, `CREATE FUNCTION/TRIGGER`.
   - Migrations [`001`](../database/migrations/001_user_session_auth.sql)–[`004`](../database/migrations/004_workflow_guards.sql): `CREATE TABLE user_session`; `ALTER TABLE … ADD CONSTRAINT/COLUMN`.
   - [`database/scripts/reset_db.sql`](../database/scripts/reset_db.sql): `DROP` in dependency order, with a guard.
+  - [`005_db_roles.sql`](../database/migrations/005_db_roles.sql): `CREATE ROLE`, `GRANT`, `REVOKE` (DCL).
   - In the catalog: 15 PK, 28 FK (including composite and self-referencing), 17 UNIQUE (including a partial unique index `ux_risk_rule_one_active`), 42 CHECK, and 1 deferred constraint trigger.
 - **Demo:**
   - psql `\d claim` shows its CHECKs and composite FK.
@@ -82,7 +83,7 @@ embedding service on port 8001, and `npm run dev` in `backend/`. "psql" below me
   - why one engine instead of a separate vector database: the same transaction for claim, assessment and matches, and real FKs from matches to reference cases
 - **Demo:** read the three bullet points about why one engine instead of a separate vector database. Then show `sp_screen_claim` writing the assessment and matches in one transaction (migration 002, lines 91–242).
 
-## 6. DML operations (4 marks) ⚠
+## 6. DML operations (4 marks)
 
 - **Evidence:**
   - **INSERT:**
@@ -98,9 +99,8 @@ embedding service on port 8001, and `npm run dev` in `backend/`. "psql" below me
     - reference-case deactivation
     - session revocation ([`lib/auth.ts`](../backend/app/lib/auth.ts))
     - risk-rule activation switch (reference-case seed)
-  - **DELETE:** only demonstrated as *rejected* (§G10: `DELETE FROM claim` is blocked by `trg_claim_no_delete`).
-- **Demo:** submit a claim in the UI (INSERT); mark a notification read (UPDATE); run §G10 in psql (DELETE refused, history preserved).
-- **Weakness:** see [Weak or missing](#weak-or-missing) item A.
+  - **DELETE:** §G14b deletes expired and revoked login sessions with `DELETE … WHERE revoked_at IS NOT NULL OR expires_at <= now() RETURNING …`, shown removing 2 rows in `execution_log.txt`. Business tables refuse DELETE on purpose (§G10: `DELETE FROM claim` is blocked by `trg_claim_no_delete`), because claims, decisions and audit history must be kept (FR-13).
+- **Demo:** submit a claim in the UI (INSERT); mark a notification read (UPDATE); run §G14b in psql (2 dead sessions deleted, `RETURNING` shows them); run §G10 (DELETE of a claim refused, history preserved).
 
 ## 7. Nested, correlated, recursive queries, JOIN queries (4 marks)
 
@@ -172,7 +172,7 @@ output of a full run is in [`execution_log.txt`](../database/queries/execution_l
   - Verified by 23 API tests ([`backend/tests/api.test.mjs`](../backend/tests/api.test.mjs), [`TESTING.md`](TESTING.md)).
 - **Demo:** `POST /api/claims/[id]/review` with Approve on a HIGH-risk claim. The 422 message comes straight from the database trigger.
 
-## 12. Authentication – front end, ≥ 2 roles, RBAC in the database (4 marks) ⚠
+## 12. Authentication – front end, ≥ 2 roles, RBAC in the database (4 marks)
 
 - **Front end:** `/login` ([`login/LoginForm.tsx`](../backend/app/login/LoginForm.tsx)) and sign-out; `proxy.ts` redirects signed-out users.
 - **Roles:** 3 (`app_role`: POLICYHOLDER, CLAIMS_ADJUSTER, ADMIN).
@@ -184,12 +184,13 @@ output of a full run is in [`execution_log.txt`](../database/queries/execution_l
   - role-binding triggers: `trg_review_reviewer_role` (only active adjusters review), `trg_policy_holder_role`, `trg_ref_case_creator_role`/`_deactivator_role` (admins only), `trg_user_role_change_guard`
   - `trg_user_deactivate_revoke_sessions`
   - `trg_user_status_guard` (last admin)
+- **PostgreSQL roles (migration 005):** `claimguard_app` gets SELECT/INSERT/UPDATE on the tables the app uses, INSERT-only on history tables, no DELETE except dead sessions, no TRUNCATE, no DDL, and EXECUTE on the three procedures (revoked from PUBLIC). `claimguard_readonly` can read only the reporting views. The web app connects as `claimguard_web`, a login role in `claimguard_app`. The 23 API tests pass with it, and 8 database tests check the privileges.
 - **Server:** `requireRole` on every route; ownership filtered in SQL.
 - **Demo:**
   - Sign in as the adjuster and open `/admin`: you are redirected.
   - In psql, `INSERT INTO review(… reviewer_id = <an ADMIN id> …)` is refused by `trg_review_reviewer_role`.
   - Deactivate a user on `/admin/users`: their open session gets 401 at once.
-- **Weakness:** see [Weak or missing](#weak-or-missing) item C.
+  - In psql, `SET ROLE claimguard_app; DELETE FROM claim;` gives *permission denied for table claim* before any trigger runs. `SET ROLE claimguard_readonly; SELECT * FROM claim;` is denied too, while `SELECT * FROM v_claim_status_summary;` works. Run `RESET ROLE;` afterwards.
 
 ## 13. Documentation, Git/GitHub (2 marks)
 
@@ -213,10 +214,9 @@ output of a full run is in [`execution_log.txt`](../database/queries/execution_l
 
 ## Weak or missing
 
-**A. Item 6 – no successful DELETE.**
-- **Problem:** every core table forbids DELETE by design (history retention, FR-13), so the only DELETE in the project is one that the triggers reject. An examiner may want a DELETE that removes rows.
-- **Fix (5 minutes):** `user_session` has no delete guard. Add a cleanup query to `claimguard_queries_v1.sql`, e.g. `DELETE FROM user_session WHERE revoked_at IS NOT NULL OR expires_at < now() RETURNING session_id;`. It is a real DELETE that does not touch business history.
-- **In the viva:** be ready to explain that business records are deactivated, never deleted.
+**A. Item 6 – no successful DELETE. Fixed.**
+- §G14b now deletes expired and revoked sessions (a real `DELETE … RETURNING`), and a database test checks that only dead sessions go.
+- In the viva, explain why business records are deactivated, never deleted (FR-13).
 
 **B. Item 9 – Update and Delete of vectors are not in place.**
 - **Problem:** `fn_ref_case_immutable` and `trg_reference_fraud_case_no_delete` forbid `UPDATE … SET embedding` and `DELETE`, because past screening matches must keep pointing at the exact evidence an adjuster saw. Update is therefore a new re-embedded version, and Delete is deactivation, which removes the vector from every search.
@@ -224,13 +224,10 @@ output of a full run is in [`execution_log.txt`](../database/queries/execution_l
 - **Risk:** an examiner who expects literal `UPDATE`/`DELETE` statements on the vector column may mark it partially correct.
 - **Fallback if asked:** show the procedure `sp_revise_reference_case`, the `UPDATE reference_fraud_case SET is_active=false …` it runs, and the Python tests "revision deactivates the old row…" and "second revision: WITH RECURSIVE…".
 
-**C. Item 12 – no PostgreSQL-level roles.**
-- **Problem:** RBAC is enforced inside the database with tables, functions and triggers, but there are no `CREATE ROLE` / `GRANT` / row-level security objects, and the app connects as one database user. If "RBAC in the database" is read as database roles, that part is missing.
-- **Fix (about 30 minutes):** a migration `005_db_roles.sql` that
-  - creates `claimguard_app` (SELECT/INSERT/UPDATE on application tables, EXECUTE on the procedures, no DELETE/TRUNCATE/DDL)
-  - creates `claimguard_readonly` (SELECT on the views only)
-  - optionally adds an RLS policy on `notification`, so a session sees only `user_id = current_setting('claimguard.actor_id')::uuid`
-  - updates `DATABASE_URL` to the `claimguard_app` role
+**C. Item 12 – no PostgreSQL-level roles. Fixed.**
+- Migration 005 adds `claimguard_app` and `claimguard_readonly` with least-privilege GRANTs, and revokes procedure EXECUTE from PUBLIC.
+- The web app runs as `claimguard_web` (a member of `claimguard_app`); the API suite passed that way.
+- Row-level security was deliberately not added. The app sets `claimguard.actor_id` only inside write transactions, and triggers insert notifications for *other* users (e.g. the adjuster's decision notifies the policyholder), so an RLS policy on `notification` would block legitimate writes. Ownership is enforced in every query instead.
 
 **D. Smaller points:**
 - The semantic evaluation uses 16 synthetic sentences, with thresholds tuned on the same sample (stated in TESTING.md).
