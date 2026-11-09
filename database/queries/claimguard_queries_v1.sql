@@ -1,6 +1,7 @@
 -- =============================================================================
 -- ClaimGuard SQL Query Collection v1
 -- Compatible with: claimguard_schema_v4.sql + claimguard_seed_v1.sql
+--   + migrations 001 and 002 (section H calls the migration 002 procedures)
 --
 -- SECTIONS
 --   A.  Basic SELECT — single-table queries
@@ -10,6 +11,7 @@
 --   E.  CTEs (WITH clauses)
 --   F.  Window functions
 --   G.  Project-specific queries — fraud detection, workflow, analytics
+--   H.  Transactions and stored procedures (migration 002) — CALL, COMMIT, ROLLBACK
 -- =============================================================================
 
 -- =============================================================================
@@ -268,6 +270,7 @@ ORDER  BY month;
 -- =============================================================================
 
 -- D1. Claims that have never been screened (no assessment record at all)
+--     (correlated: the NOT EXISTS subquery refers to the outer c.claim_id)
 SELECT c.claim_id,
        u.full_name  AS claimant,
        c.submitted_at
@@ -338,7 +341,7 @@ WHERE  p.policy_id IN (
 )
 ORDER  BY p.policy_number, c.submitted_at;
 
--- D6. Users who have received at least one unread notification
+-- D6. Users who have received at least one unread notification (correlated EXISTS + scalar subquery)
 SELECT u.full_name,
        u.email,
        (SELECT count(*) FROM notification n
@@ -349,6 +352,26 @@ WHERE  EXISTS (
     WHERE  n.user_id = u.user_id AND n.read_at IS NULL
 )
 ORDER  BY unread_count DESC;
+
+-- D7. CORRELATED SUBQUERY: matches that are stronger than usual for that reference case.
+--     The inner query is re-evaluated for every outer row, because it refers to the
+--     outer row's m.reference_case_id: "average similarity of THIS case across all matches".
+SELECT r.title                                   AS reference_case,
+       m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4)     AS similarity,
+       round((SELECT avg(m2.similarity_score)
+              FROM   screening_match m2
+              WHERE  m2.reference_case_id = m.reference_case_id)::numeric, 4)
+                                                 AS case_avg_similarity
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+WHERE  m.similarity_score > (
+           SELECT avg(m2.similarity_score)
+           FROM   screening_match m2
+           WHERE  m2.reference_case_id = m.reference_case_id   -- correlation
+       )
+ORDER  BY r.title, similarity DESC;
 
 -- =============================================================================
 -- SECTION E — CTEs (Common Table Expressions)
@@ -435,23 +458,54 @@ FROM   high_risk_claims hr
 LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
 ORDER  BY hr.age_hours DESC;
 
--- E4. Recursive CTE: audit trail chain for a specific claim (ordered event history)
+-- E4. RECURSIVE CTE: monthly claim trend with zero-filled months.
+--     C6 groups claims by month, so a month with no claims simply disappears.
+--     Here WITH RECURSIVE generates every month from the first to the last submission
+--     (anchor = first month; recursive step = previous month + 1, stopping at the last
+--     month), and a LEFT JOIN keeps months with 0 claims visible in the trend.
+WITH RECURSIVE months (month_start, last_month) AS (
+    -- anchor member: the first month that has a claim
+    SELECT date_trunc('month', min(submitted_at))::date,
+           date_trunc('month', max(submitted_at))::date
+    FROM   claim
+    UNION ALL
+    -- recursive member: next month, until the last month with a claim
+    SELECT (month_start + interval '1 month')::date,
+           last_month
+    FROM   months
+    WHERE  month_start < last_month
+)
+SELECT m.month_start                                  AS month,
+       count(c.claim_id)                              AS claims_submitted,
+       coalesce(sum(c.claimed_amount), 0)             AS total_claimed,
+       count(c.claim_id) FILTER (WHERE c.review_required) AS high_risk_flagged
+FROM   months m
+LEFT JOIN claim c
+       ON date_trunc('month', c.submitted_at)::date = m.month_start
+GROUP  BY m.month_start
+ORDER  BY m.month_start;
+
+-- E4b. Ordered audit trail for one claim (non-recursive CTE + ROW_NUMBER).
+--     Columns match audit_log: occurred_at, action, actor_id, claim_id, details.
 WITH claim_events AS (
-    SELECT occurred_at,
-           action,
+    SELECT al.occurred_at,
+           al.audit_id,
+           al.action,
+           al.actor_type,
            COALESCE(actor.full_name, 'SYSTEM') AS actor,
-           details
+           al.details
     FROM   audit_log al
     LEFT JOIN app_user actor ON actor.user_id = al.actor_id
     WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000001'
-    ORDER  BY occurred_at
 )
-SELECT row_number() OVER (ORDER BY occurred_at) AS step,
+SELECT row_number() OVER (ORDER BY occurred_at, audit_id) AS step,
        occurred_at,
        action,
+       actor_type,
        actor,
        details
-FROM   claim_events;
+FROM   claim_events
+ORDER  BY step;
 
 -- E5. Policy utilization: policies with claim count, total exposure, and decision rate
 WITH policy_stats AS (
@@ -745,7 +799,7 @@ BEGIN
   BEGIN
     UPDATE information_response
     SET body = 'Tampered response body'
-    WHERE response_id = 'h1000000-0000-0000-0000-000000000001';
+    WHERE response_id = '81000000-0000-0000-0000-000000000001';
     RAISE NOTICE 'ERROR: update should have been rejected';
   EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE 'PASS: information_response update rejected with % — %', SQLSTATE, SQLERRM;
@@ -755,21 +809,210 @@ END $$;
 -- G14. NOTIFICATION UPDATE — read then dismiss (valid state transition)
 UPDATE notification
 SET read_at = now()
-WHERE notification_id = 'i1000000-0000-0000-0000-000000000005'
+WHERE notification_id = '91000000-0000-0000-0000-000000000005'
   AND read_at IS NULL;
 
 UPDATE notification
 SET dismissed_at = now()
-WHERE notification_id = 'i1000000-0000-0000-0000-000000000005'
+WHERE notification_id = '91000000-0000-0000-0000-000000000005'
   AND dismissed_at IS NULL;
 
 SELECT notification_id, notification_type, read_at, dismissed_at
 FROM   notification
-WHERE  notification_id = 'i1000000-0000-0000-0000-000000000005';
+WHERE  notification_id = '91000000-0000-0000-0000-000000000005';
 
 -- G15. COMPLETE TABLE ROW COUNTS — verify all 14 tables are populated
-SELECT tablename, n_live_tup AS row_count
+--     (pg_stat_user_tables names the table column "relname"; n_live_tup is an estimate)
+SELECT relname    AS tablename,
+       n_live_tup AS estimated_row_count
 FROM   pg_stat_user_tables
 WHERE  schemaname = 'public'
-ORDER  BY tablename;
+ORDER  BY relname;
 
+
+-- =============================================================================
+-- SECTION H — Transactions and stored procedures (requires migration 002)
+-- =============================================================================
+-- H1–H3 leave the database unchanged: every change they make is rolled back.
+
+-- H1. FOREIGN KEY CHECK — a screening cannot name a risk-rule version that does not exist
+--     (fk_assessment_risk_rule_version, enforced by migration 002).
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO screening_assessment
+      (claim_id, attempt_no, status, outcome, risk_indicator, risk_rule_version,
+       embedding_model_id, description_embedding, top_k, similarity_metric)
+    SELECT 'd1000000-0000-0000-0000-000000000006', 99, 'COMPLETED', 'NO_MATCH', 'LOW', 'v9.9-missing',
+           1, embedding, 3, 'cosine_similarity'
+    FROM   reference_fraud_case WHERE case_id = 'c1000000-0000-0000-0000-000000000001';
+    RAISE NOTICE 'FAIL: unknown risk_rule_version was accepted';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'PASS: unknown rule version rejected (%): %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+
+-- H2. ATOMICITY ON FAILURE — sp_decide_claim is all-or-nothing.
+--     (a) Approving claim 4, whose only screening FAILED, is blocked by fn_assert_approvable.
+--     (b) Rejecting claim 3 succeeds (review + decision + notification + 2 audit rows), then a
+--         later step in the same transaction fails. The exception handler rolls the whole
+--         block back to its savepoint, so the audit rows written by the triggers vanish too.
+DO $$
+DECLARE
+  v_audit_before  bigint;  v_audit_after  bigint;
+  v_review_before bigint;  v_review_after bigint;
+  v_notif_before  bigint;  v_notif_after  bigint;
+  v_status        text;
+  v_review uuid; v_decision uuid; v_notification uuid;
+BEGIN
+  -- (a) blocked approval
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                         'a2000000-0000-0000-0000-000000000001',
+                         'APPROVED', 'Attempting approval while screening has FAILED.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'FAIL: approval of a FAILED-screening claim was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2a blocked as expected (%): %', SQLSTATE, SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_after FROM review    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  RAISE NOTICE 'H2a %: audit rows % -> %, reviews % -> %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after;
+
+  -- (b) success followed by a later failure in the same unit of work
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_before  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                         'a2000000-0000-0000-0000-000000000003',
+                         'REJECTED', 'Hospital records could not be verified.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'H2b inside the unit: review %, decision %, audit rows now %',
+      v_review, v_decision,
+      (SELECT count(*) FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000003');
+    RAISE EXCEPTION 'simulated failure of a later step (e.g. payment service)';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2b rolled back after: %', SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_after FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_after  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT claim_status INTO v_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  RAISE NOTICE 'H2b %: audit % -> %, reviews % -> %, notifications % -> %, claim_status %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after
+              AND v_notif_before = v_notif_after AND v_status <> 'DECIDED' THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after,
+    v_notif_before, v_notif_after, v_status;
+END $$;
+
+-- H3. EXPLICIT ROLLBACK — BEGIN; CALL sp_decide_claim(...); ROLLBACK;
+--     Inside the transaction the review, decision, notification and audit rows exist.
+--     After ROLLBACK the claim is back to AWAITING_INFO and the audit count is unchanged.
+SELECT 'before BEGIN' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+
+BEGIN;
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                     'a2000000-0000-0000-0000-000000000003',
+                     'REJECTED', 'Hospital records could not be verified.');
+SELECT 'inside transaction' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+ROLLBACK;
+
+SELECT 'after ROLLBACK' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+
+-- H4–H7 below PERSIST changes (claims 4 and 6). Run them only on a disposable database;
+-- running this file a second time fails at H5 because claim 4 is then already decided.
+
+-- H4. sp_screen_claim — retry screening of claim 4 (attempt 1 FAILED in the seed).
+--     The app's embedding model would supply the vector; here a deterministic probe close
+--     to the staged-collision reference case stands in for it. A DO block is used because
+--     the vector is read from the database first (CALL arguments cannot contain subqueries).
+DO $$
+DECLARE
+  v_probe vector;
+  v_assessment uuid; v_status varchar; v_risk varchar;
+BEGIN
+  SELECT r1.embedding + r2.embedding INTO v_probe
+  FROM   reference_fraud_case r1, reference_fraud_case r2
+  WHERE  r1.case_id = 'c1000000-0000-0000-0000-000000000001'
+    AND  r2.case_id = 'c1000000-0000-0000-0000-000000000006';
+
+  CALL sp_screen_claim('d1000000-0000-0000-0000-000000000004', 1, v_probe, 3, NULL,
+                       v_assessment, v_status, v_risk);
+  RAISE NOTICE 'H4 claim 4 screened: assessment %, status %, risk %', v_assessment, v_status, v_risk;
+END $$;
+
+SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version,
+       m.match_rank, round(m.similarity_score::numeric, 4) AS similarity,
+       c.screening_status AS claim_screening_status, c.review_required
+FROM   screening_assessment a
+JOIN   claim c ON c.claim_id = a.claim_id
+LEFT JOIN screening_match m ON m.assessment_id = a.assessment_id
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000004'
+ORDER  BY a.attempt_no, m.match_rank;
+
+-- H5. BEGIN; CALL sp_decide_claim(...); COMMIT;
+--     Claim 4 now has a COMPLETED screening, but H4 scored it HIGH. With migration 004
+--     applied, approving it would be refused until an information request is answered
+--     (the web app demonstrates that flow), so this demo records a rejection, which is
+--     valid with or without 004. Review, decision, notification and both audit rows are
+--     kept together by COMMIT.
+BEGIN;
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                     'a2000000-0000-0000-0000-000000000001',
+                     'REJECTED', 'Retry screening matched a staged-collision pattern; repair invoices could not be verified.');
+COMMIT;
+
+SELECT c.claim_status, cd.decision_status, rv.review_action, rv.assessment_id IS NOT NULL AS review_has_evidence,
+       n.notification_type, n.message
+FROM   claim c
+JOIN   claim_decision cd ON cd.claim_id = c.claim_id
+JOIN   review rv        ON rv.review_id = cd.review_id
+JOIN   notification n   ON n.claim_id   = c.claim_id AND n.notification_type = 'CLAIM_REJECTED'
+WHERE  c.claim_id = 'd1000000-0000-0000-0000-000000000004';
+
+SELECT al.action, al.actor_type, actor.full_name AS actor, al.details
+FROM   audit_log al
+LEFT JOIN app_user actor ON actor.user_id = al.actor_id
+WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000004'
+ORDER  BY al.audit_id;
+
+-- H6. sp_screen_claim failure handling — a failed screening is never stored as LOW.
+--     (a) the caller reports an embedding-service failure;
+--     (b) the caller passes a 3-dimensional vector: the error is caught inside the
+--         procedure and stored as a FAILED attempt instead of a risk result.
+CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, NULL::vector, 3,
+                     'Embedding service unavailable: HTTP 503 (attempt 1)');
+CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, '[0.1,0.2,0.3]'::vector, 3);
+
+SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version, a.failure_reason,
+       c.screening_status AS claim_screening_status
+FROM   screening_assessment a
+JOIN   claim c ON c.claim_id = a.claim_id
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000006'
+ORDER  BY a.attempt_no;
+
+-- H7. Invariant check across the whole database: no FAILED attempt carries a risk value,
+--     and every COMPLETED attempt names an existing risk rule (expected: 0 and 0).
+SELECT (SELECT count(*) FROM screening_assessment
+        WHERE status = 'FAILED' AND risk_indicator IS NOT NULL)           AS failed_with_risk,
+       (SELECT count(*) FROM screening_assessment a
+        WHERE status = 'COMPLETED'
+          AND NOT EXISTS (SELECT 1 FROM risk_rule r
+                          WHERE r.rule_version = a.risk_rule_version))  AS completed_without_rule;

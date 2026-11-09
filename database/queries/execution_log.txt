@@ -1,0 +1,2716 @@
+ClaimGuard database execution log
+Generated: 2026-11-09 07:46 UTC
+Server: PostgreSQL 17.11 (Debian 17.11-1.pgdg12+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+Database: claimguard_test_log (disposable Docker container, image pgvector/pgvector:pg17)
+Every file was run with: psql -X -v ON_ERROR_STOP=1
+
+Steps: reset -> schema v4 -> seed v1 -> migration 001 -> demo passwords -> migrations 002, 003, 004 -> reference cases v2 -> read-only queries -> full queries
+
+==================================================================
+== database/scripts/reset_db.sql
+==================================================================
+NOTICE:  reset_db.sql: dropping ClaimGuard objects in database "claimguard_test_log"
+NOTICE:  view "v_active_session" does not exist, skipping
+NOTICE:  view "v_stale_pending_screening" does not exist, skipping
+NOTICE:  view "v_high_risk_aged_queue" does not exist, skipping
+NOTICE:  view "v_adjuster_workload" does not exist, skipping
+NOTICE:  view "v_reference_match_frequency" does not exist, skipping
+NOTICE:  view "v_risk_distribution_over_time" does not exist, skipping
+NOTICE:  view "v_review_queue" does not exist, skipping
+NOTICE:  view "v_claim_status_summary" does not exist, skipping
+NOTICE:  type "vector" does not exist, skipping
+NOTICE:  procedure sp_decide_claim(uuid,uuid,pg_catalog.varchar,text,uuid,uuid,uuid) does not exist, skipping
+NOTICE:  type "vector" does not exist, skipping
+NOTICE:  table "user_session" does not exist, skipping
+NOTICE:  table "notification" does not exist, skipping
+NOTICE:  table "information_response" does not exist, skipping
+NOTICE:  table "claim_decision" does not exist, skipping
+NOTICE:  table "audit_log" does not exist, skipping
+NOTICE:  table "screening_match" does not exist, skipping
+NOTICE:  table "review" does not exist, skipping
+NOTICE:  table "screening_assessment" does not exist, skipping
+NOTICE:  table "risk_rule" does not exist, skipping
+NOTICE:  table "claim" does not exist, skipping
+NOTICE:  table "reference_fraud_case" does not exist, skipping
+NOTICE:  table "policy" does not exist, skipping
+NOTICE:  table "embedding_model" does not exist, skipping
+NOTICE:  table "app_user" does not exist, skipping
+NOTICE:  table "app_role" does not exist, skipping
+NOTICE:  function fn_session_principal(pg_catalog.bpchar) does not exist, skipping
+NOTICE:  function fn_user_has_role(uuid,text[]) does not exist, skipping
+NOTICE:  function fn_session_insert_guard() does not exist, skipping
+NOTICE:  function fn_session_update_guard() does not exist, skipping
+NOTICE:  function fn_revoke_sessions_on_deactivate() does not exist, skipping
+NOTICE:  function fn_compute_claim_risk(uuid,pg_catalog.varchar) does not exist, skipping
+NOTICE:  function fn_assert_approvable(uuid,uuid) does not exist, skipping
+NOTICE:  function fn_require_role() does not exist, skipping
+NOTICE:  function fn_user_role_change_guard() does not exist, skipping
+NOTICE:  function fn_forbid_mutation() does not exist, skipping
+NOTICE:  function fn_claim_insert_guard() does not exist, skipping
+NOTICE:  function fn_claim_core_immutable() does not exist, skipping
+NOTICE:  function fn_claim_state_guard() does not exist, skipping
+NOTICE:  function fn_ref_case_immutable() does not exist, skipping
+NOTICE:  function fn_assessment_before_insert() does not exist, skipping
+NOTICE:  function fn_assessment_sync_claim() does not exist, skipping
+NOTICE:  function fn_review_guard() does not exist, skipping
+NOTICE:  function fn_claim_decision_guard() does not exist, skipping
+NOTICE:  function fn_match_guard() does not exist, skipping
+NOTICE:  function fn_assessment_matches_present() does not exist, skipping
+NOTICE:  function fn_response_append_only() does not exist, skipping
+NOTICE:  function fn_notification_update_guard() does not exist, skipping
+NOTICE:  function fn_high_risk_flag() does not exist, skipping
+NOTICE:  function fn_write_claim_audit() does not exist, skipping
+NOTICE:  function fn_write_assessment_audit() does not exist, skipping
+NOTICE:  function fn_write_review_audit() does not exist, skipping
+NOTICE:  function fn_write_decision_audit() does not exist, skipping
+NOTICE:  function fn_policy_audit() does not exist, skipping
+NOTICE:  function fn_response_audit() does not exist, skipping
+NOTICE:  function fn_notification_audit() does not exist, skipping
+NOTICE:  function fn_ref_case_lineage_immutable() does not exist, skipping
+NOTICE:  function fn_ref_case_supersede_check() does not exist, skipping
+NOTICE:  function fn_ref_case_audit() does not exist, skipping
+NOTICE:  function fn_information_response_guard() does not exist, skipping
+NOTICE:  function fn_information_response_followup() does not exist, skipping
+NOTICE:  function fn_user_status_guard() does not exist, skipping
+NOTICE:  function fn_user_status_audit() does not exist, skipping
+NOTICE:  function _seed_vec(pg_catalog.int4) does not exist, skipping
+NOTICE:  reset_db.sql: 0 tables/views/sequences remain in public
+-- exit code: 0
+
+==================================================================
+== database/schema/claimguard_schema_v4.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/seed/claimguard_seed_v1.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/migrations/001_user_session_auth.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/seed/claimguard_demo_passwords_v1.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/migrations/002_risk_rule_fk_and_procedure.sql
+==================================================================
+NOTICE:  migration 002: risk_rule_version FK already present, left unchanged
+-- exit code: 0
+
+==================================================================
+== database/migrations/003_reference_case_versioning.sql
+==================================================================
+ setval 
+--------
+      2
+(1 row)
+
+ setval 
+--------
+      3
+(1 row)
+
+-- exit code: 0
+
+==================================================================
+== database/migrations/004_workflow_guards.sql
+==================================================================
+-- exit code: 0
+
+==================================================================
+== database/seed/claimguard_reference_cases_v2.sql
+==================================================================
+-- exit code: 0
+pgvector: 0.8.7
+
+==================================================================
+== database/queries/claimguard_queries_readonly_v1.sql  (statements echoed with -e)
+==================================================================
+SELECT u.user_id,
+       u.full_name,
+       u.email,
+       r.role_name,
+       u.created_at::date AS joined_date
+FROM   app_user u
+JOIN   app_role r ON r.role_id = u.role_id
+WHERE  u.is_active
+ORDER  BY r.role_name, u.full_name;
+               user_id                |    full_name    |                email                |    role_name    | joined_date 
+--------------------------------------+-----------------+-------------------------------------+-----------------+-------------
+ a1000000-0000-0000-0000-000000000001 | Priya Nair      | admin.priya@claimguard.internal     | ADMIN           | 2026-01-10
+ a1000000-0000-0000-0000-000000000002 | Rajan Menon     | admin.rajan@claimguard.internal     | ADMIN           | 2026-01-10
+ a2000000-0000-0000-0000-000000000001 | Arjun Sharma    | adjuster.arjun@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-12
+ a2000000-0000-0000-0000-000000000002 | Meera Pillai    | adjuster.meera@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-12
+ a2000000-0000-0000-0000-000000000004 | Sneha Kulkarni  | adjuster.sneha@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-14
+ a2000000-0000-0000-0000-000000000003 | Vikram Iyer     | adjuster.vikram@claimguard.internal | CLAIMS_ADJUSTER | 2026-01-13
+ a3000000-0000-0000-0000-000000000001 | Ananya Rao      | holder.ananya@example.com           | POLICYHOLDER    | 2026-02-01
+ a3000000-0000-0000-0000-000000000003 | Kavitha Reddy   | holder.kavitha@example.com          | POLICYHOLDER    | 2026-02-05
+ a3000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | holder.lakshmi@example.com          | POLICYHOLDER    | 2026-02-10
+ a3000000-0000-0000-0000-000000000004 | Mohan Das       | holder.mohan@example.com            | POLICYHOLDER    | 2026-02-07
+ a3000000-0000-0000-0000-000000000002 | Suresh Babu     | holder.suresh@example.com           | POLICYHOLDER    | 2026-02-03
+(11 rows)
+
+SELECT p.policy_number,
+       u.full_name           AS holder_name,
+       p.effective_date,
+       p.expiry_date,
+       (p.expiry_date - p.effective_date) AS coverage_days
+FROM   policy p
+JOIN   app_user u ON u.user_id = p.holder_id
+WHERE  p.is_active
+ORDER  BY p.effective_date DESC;
+ policy_number |   holder_name   | effective_date | expiry_date | coverage_days 
+---------------+-----------------+----------------+-------------+---------------
+ POL-2026-0005 | Lakshmi Nambiar | 2026-04-01     | 2027-04-01  |           365
+ POL-2026-0004 | Mohan Das       | 2026-03-01     | 2027-03-01  |           365
+ POL-2026-0002 | Suresh Babu     | 2026-02-01     | 2027-02-01  |           365
+ POL-2026-0001 | Ananya Rao      | 2026-01-01     | 2027-01-01  |           365
+ POL-2026-0003 | Kavitha Reddy   | 2025-06-01     | 2026-06-01  |           365
+(5 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       u.full_name          AS claimant,
+       c.incident_date,
+       c.claimed_amount,
+       c.claim_status,
+       c.screening_status,
+       c.review_required
+FROM   claim c
+JOIN   policy p   ON p.policy_id  = c.policy_id
+JOIN   app_user u ON u.user_id    = c.claimant_id
+ORDER  BY c.submitted_at DESC;
+               claim_id               | policy_number |    claimant     | incident_date | claimed_amount | claim_status  | screening_status | review_required 
+--------------------------------------+---------------+-----------------+---------------+----------------+---------------+------------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao      | 2026-08-01    |        5500.00 | SUBMITTED     | PENDING          | f
+ d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar | 2026-07-10    |       12000.00 | DECIDED       | COMPLETED        | f
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das       | 2026-07-01    |      215000.00 | SUBMITTED     | FAILED           | f
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     | 2026-06-02    |       45000.00 | DECIDED       | COMPLETED        | f
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy   | 2026-05-20    |      125000.00 | AWAITING_INFO | COMPLETED        | t
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      | 2026-05-14    |       87500.00 | DECIDED       | COMPLETED        | t
+(6 rows)
+
+SELECT case_id,
+       title,
+       left(description, 100) || '...' AS description_excerpt,
+       is_confirmed,
+       created_at::date
+FROM   reference_fraud_case
+WHERE  is_active
+ORDER  BY created_at DESC;
+               case_id                |                            title                             |                                           description_excerpt                                           | is_confirmed | created_at 
+--------------------------------------+--------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+--------------+------------
+ c2000000-0000-0000-0000-000000000018 | Two-wheeler fall staged to claim hospital and repair costs   | The rider said his motorbike skidded on gravel near a construction site, causing a fractured wrist a... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000012 | Burglary staged to claim jewellery that was never owned      | The household reported a break-in and listed gold jewellery and electronics worth several lakh rupee... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000013 | Slow pipe leak reported as a sudden burst                    | The claim described a pipe bursting overnight and flooding the flat, ruining flooring and furniture.... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000014 | Policy bought after the loss had already happened            | Insurance was taken online late at night, and a claim for flood damage to the car was filed two days... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000015 | Car abandoned and torched to escape loan payments            | An owner behind on EMI payments reported his hatchback stolen, and it was found burnt out at a quarr... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000016 | Forged pharmacy and diagnostic bills added to a genuine stay | The patient's three-day hospital stay was real, but the claim added MRI scans, specialist visits and... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000017 | Same phone reported lost to several insurers                 | A premium smartphone was declared lost on a train and claimed under three gadget policies taken out ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000001 | Staged rear-end collision with a pre-arranged lead vehicle   | Investigators found that the 'victim' car braked sharply without reason on an empty city road so the... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000002 | Repair invoice inflated by the workshop after approval       | The approved estimate covered a bumper and one headlamp, but the final bill added a radiator, both a... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000003 | Old dents and rust presented as fresh accident damage        | A policyholder bought cover for a car that already had a crushed door and a cracked windscreen, then... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000004 | Same incident claimed twice under two policies               | One minor parking-lot scrape was reported to two different insurers within a week, each claim using ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000005 | Phantom passengers added to a minor collision                | After a low-speed bump, four injury claims were filed by people said to be riding in the car. Toll c... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000006 | Vehicle reported stolen after being sold to a scrap dealer   | The owner told police his SUV was taken from outside his house at night and claimed the full insured... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000007 | Shop fire set deliberately to clear unsold stock and debt    | A textile shop burned down overnight shortly after the owner increased the sum insured. Fire officer... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000008 | Hospital admission and surgery that never took place         | A health claim included discharge summaries, pharmacy bills and an operation note for a knee procedu... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000009 | Whiplash injury exaggerated for months of compensation       | Following a gentle bump in slow traffic, the claimant reported severe neck and back pain, months of ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000010 | Swoop-and-squat crash caused by two cooperating cars         | One car cut in sharply in front of the insured vehicle while a second car boxed it in from the side,... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000011 | Paper accident: collision invented with borrowed photos      | Two friends filed a claim for a crash at a junction, with photos, a sketch and witness statements. N... | t            | 2026-11-09
+ c1000000-0000-0000-0000-000000000006 | Slip and Fall — Coordinated Claimant Network                 | Multiple unrelated claimants submitted slip-and-fall claims against the same commercial property wit... | t            | 2026-02-12
+ c1000000-0000-0000-0000-000000000005 | Theft Claim — Item Never Owned                               | High-value electronics theft claimed. Purchase receipts provided were forged. Forensic analysis conf... | t            | 2026-02-10
+ c1000000-0000-0000-0000-000000000004 | Fire Damage — Arson Investigation Confirmed                  | Property fire reported as accidental. Fire investigation report confirmed accelerant use. Claimant h... | t            | 2026-02-08
+ c1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment          | Claim submitted for surgical procedure. Hospital records did not confirm the procedure. Provider and... | t            | 2026-02-05
+ c1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address                  | Multiple water-damage claims filed within 12 months for the same residential address under different... | t            | 2026-02-03
+ c1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44                     | Claimant reported a head-on collision on highway NH-44 during late-night hours. Independent witnesse... | t            | 2026-02-01
+(24 rows)
+
+SELECT risk_rule_id,
+       rule_version,
+       (definition->>'high_similarity_threshold')::numeric   AS high_threshold,
+       (definition->>'medium_similarity_threshold')::numeric AS medium_threshold,
+       is_active,
+       created_at::date
+FROM   risk_rule
+ORDER  BY risk_rule_id;
+ risk_rule_id | rule_version | high_threshold | medium_threshold | is_active | created_at 
+--------------+--------------+----------------+------------------+-----------+------------
+            1 | v1.0         |           0.85 |             0.65 | f         | 2026-01-20
+            2 | v1.1         |           0.80 |             0.60 | f         | 2026-03-01
+            3 | v2.0-minilm  |           0.65 |             0.55 | t         | 2026-11-09
+(3 rows)
+
+SELECT notification_id,
+       notification_type,
+       message,
+       created_at,
+       read_at,
+       dismissed_at
+FROM   notification
+WHERE  user_id = 'a3000000-0000-0000-0000-000000000001'
+ORDER  BY read_at NULLS FIRST, created_at DESC;
+           notification_id            | notification_type |                                             message                                             |       created_at       |        read_at         | dismissed_at 
+--------------------------------------+-------------------+-------------------------------------------------------------------------------------------------+------------------------+------------------------+--------------
+ 91000000-0000-0000-0000-000000000001 | CLAIM_APPROVED    | Your claim POL-2026-0001 / Claim 1 has been approved. Settlement processing will begin shortly. | 2026-06-01 10:00:00+00 | 2026-06-02 03:30:00+00 | 
+(1 row)
+
+SELECT claim_id,
+       claimed_amount,
+       ts_headline('english', description,
+                   plainto_tsquery('english', 'collision highway'),
+                   'MaxWords=15, MinWords=5') AS matched_excerpt,
+       ts_rank(to_tsvector('english', description),
+               plainto_tsquery('english', 'collision highway')) AS rank
+FROM   claim
+WHERE  to_tsvector('english', description)
+       @@ plainto_tsquery('english', 'collision highway')
+ORDER  BY rank DESC;
+               claim_id               | claimed_amount |                matched_excerpt                |    rank    
+--------------------------------------+----------------+-----------------------------------------------+------------
+ d1000000-0000-0000-0000-000000000001 |       87500.00 | <b>collision</b> on the <b>highway</b> during | 0.09735848
+(1 row)
+
+SELECT c.claim_id,
+       u.full_name           AS claimant,
+       c.claimed_amount,
+       c.claim_status,
+       a.attempt_no          AS last_attempt,
+       a.status              AS screening_status,
+       a.outcome,
+       a.risk_indicator,
+       a.risk_rule_version
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+LEFT JOIN LATERAL (
+    SELECT attempt_no, status, outcome, risk_indicator, risk_rule_version
+    FROM   screening_assessment
+    WHERE  claim_id = c.claim_id
+    ORDER  BY attempt_no DESC
+    LIMIT  1
+) a ON true
+ORDER  BY c.submitted_at DESC;
+               claim_id               |    claimant     | claimed_amount | claim_status  | last_attempt | screening_status |    outcome    | risk_indicator | risk_rule_version 
+--------------------------------------+-----------------+----------------+---------------+--------------+------------------+---------------+----------------+-------------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      |        5500.00 | SUBMITTED     |              |                  |               |                | 
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar |       12000.00 | DECIDED       |            1 | COMPLETED        | NO_MATCH      | LOW            | v1.1
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       |      215000.00 | SUBMITTED     |            1 | FAILED           |               |                | 
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     |       45000.00 | DECIDED       |            1 | COMPLETED        | MATCHES_FOUND | MEDIUM         | v1.1
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   |      125000.00 | AWAITING_INFO |            1 | COMPLETED        | MATCHES_FOUND | HIGH           | v1.1
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      |       87500.00 | DECIDED       |            1 | COMPLETED        | MATCHES_FOUND | HIGH           | v1.1
+(6 rows)
+
+SELECT m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       r.title                               AS matched_case_title,
+       left(r.description, 80) || '...'     AS case_description_excerpt,
+       c.claim_id,
+       claimant.full_name                   AS claimant
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id    = m.reference_case_id
+JOIN   screening_assessment a ON a.assessment_id = m.assessment_id
+JOIN   claim c                ON c.claim_id   = a.claim_id
+JOIN   app_user claimant      ON claimant.user_id = c.claimant_id
+ORDER  BY m.assessment_id, m.match_rank;
+            assessment_id             | match_rank | similarity |                 matched_case_title                  |                              case_description_excerpt                               |               claim_id               |   claimant    
+--------------------------------------+------------+------------+-----------------------------------------------------+-------------------------------------------------------------------------------------+--------------------------------------+---------------
+ e1000000-0000-0000-0000-000000000001 |          1 |     0.9121 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000001 |          2 |     0.7834 | Slip and Fall — Coordinated Claimant Network        | Multiple unrelated claimants submitted slip-and-fall claims against the same com... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000001 |          3 |     0.6215 | Water Damage — Repeated Claims Same Address         | Multiple water-damage claims filed within 12 months for the same residential add... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000002 |          1 |     0.7456 | Water Damage — Repeated Claims Same Address         | Multiple water-damage claims filed within 12 months for the same residential add... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000002 |          2 |     0.6102 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000002 |          3 |     0.5301 | Medical Procedure Not Performed — Phantom Treatment | Claim submitted for surgical procedure. Hospital records did not confirm the pro... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000003 |          1 |     0.8822 | Medical Procedure Not Performed — Phantom Treatment | Claim submitted for surgical procedure. Hospital records did not confirm the pro... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+ e1000000-0000-0000-0000-000000000003 |          2 |     0.7490 | Theft Claim — Item Never Owned                      | High-value electronics theft claimed. Purchase receipts provided were forged. Fo... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+ e1000000-0000-0000-0000-000000000003 |          3 |     0.6033 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+(9 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       adj.full_name    AS adjuster,
+       rv.review_action,
+       rv.notes,
+       rv.reviewed_at
+FROM   review rv
+JOIN   claim c     ON c.claim_id    = rv.claim_id
+JOIN   policy p    ON p.policy_id   = c.policy_id
+JOIN   app_user adj ON adj.user_id  = rv.reviewer_id
+ORDER  BY c.claim_id, rv.reviewed_at;
+               claim_id               | policy_number |    adjuster    | review_action  |                                                                                  notes                                                                                  |      reviewed_at       
+--------------------------------------+---------------+----------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Arjun Sharma   | APPROVED       | Evidence reviewed. Similarity matches flagged concern but FIR, repair records and independent assessment confirm legitimate collision. Approved at adjuster discretion. | 2026-06-01 09:30:00+00
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Meera Pillai   | INFO_REQUESTED | Pattern matches two water-damage cases at same address. Require proof of plumber visit, independent structural survey, and previous claim history.                      | 2026-06-10 08:30:00+00
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Meera Pillai   | REJECTED       | Survey confirms structural pipe failure but repeated claims at same address within 12 months exceeds acceptable risk threshold under policy terms. Claim rejected.      | 2026-06-20 10:30:00+00
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Vikram Iyer    | INFO_REQUESTED | High similarity to phantom treatment case. Requesting original hospital records, surgeon licence number, and operative notes directly from hospital.                    | 2026-06-25 05:30:00+00
+ d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Sneha Kulkarni | APPROVED       | FIR verified. No pattern match. Claimed amount within policy limit. Approved.                                                                                           | 2026-07-15 04:30:00+00
+(5 rows)
+
+SELECT cd.decision_id,
+       cd.decision_status,
+       cd.decided_at::date,
+       c.claim_id,
+       p.policy_number,
+       holder.full_name   AS policyholder,
+       c.claimed_amount,
+       adj.full_name      AS deciding_adjuster
+FROM   claim_decision cd
+JOIN   review rv       ON rv.review_id  = cd.review_id
+JOIN   claim c         ON c.claim_id    = cd.claim_id
+JOIN   policy p        ON p.policy_id   = c.policy_id
+JOIN   app_user holder ON holder.user_id = c.claimant_id
+JOIN   app_user adj    ON adj.user_id    = rv.reviewer_id
+ORDER  BY cd.decided_at DESC;
+             decision_id              | decision_status | decided_at |               claim_id               | policy_number |  policyholder   | claimed_amount | deciding_adjuster 
+--------------------------------------+-----------------+------------+--------------------------------------+---------------+-----------------+----------------+-------------------
+ 71000000-0000-0000-0000-000000000003 | APPROVED        | 2026-07-15 | d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar |       12000.00 | Sneha Kulkarni
+ 71000000-0000-0000-0000-000000000002 | REJECTED        | 2026-06-20 | d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     |       45000.00 | Meera Pillai
+ 71000000-0000-0000-0000-000000000001 | APPROVED        | 2026-06-01 | d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      |       87500.00 | Arjun Sharma
+(3 rows)
+
+SELECT ir.response_id,
+       p.policy_number,
+       holder.full_name   AS responder,
+       adj.full_name      AS requesting_adjuster,
+       rv.review_action,
+       left(rv.notes, 60) || '...'  AS request_summary,
+       left(ir.body, 80) || '...'   AS response_excerpt,
+       ir.responded_at
+FROM   information_response ir
+JOIN   review rv        ON rv.review_id   = ir.review_id
+JOIN   claim c          ON c.claim_id     = ir.claim_id
+JOIN   policy p         ON p.policy_id    = c.policy_id
+JOIN   app_user holder  ON holder.user_id = ir.responder_id
+JOIN   app_user adj     ON adj.user_id    = rv.reviewer_id;
+             response_id              | policy_number |  responder  | requesting_adjuster | review_action  |                         request_summary                         |                                  response_excerpt                                   |      responded_at      
+--------------------------------------+---------------+-------------+---------------------+----------------+-----------------------------------------------------------------+-------------------------------------------------------------------------------------+------------------------
+ 81000000-0000-0000-0000-000000000001 | POL-2026-0002 | Suresh Babu | Meera Pillai        | INFO_REQUESTED | Pattern matches two water-damage cases at same address. Requ... | Attached: (1) Plumber visit receipt dated 3-Jun-2026, (2) Building society struc... | 2026-06-13 04:30:00+00
+(1 row)
+
+SELECT al.audit_id,
+       al.occurred_at,
+       al.actor_type,
+       COALESCE(actor.full_name, 'SYSTEM') AS actor,
+       al.action,
+       c.claim_id                          AS target_claim,
+       COALESCE(target_user.full_name, '') AS target_user
+FROM   audit_log al
+LEFT JOIN app_user actor       ON actor.user_id       = al.actor_id
+LEFT JOIN claim c              ON c.claim_id          = al.claim_id
+LEFT JOIN app_user target_user ON target_user.user_id = al.target_user_id
+ORDER  BY al.occurred_at DESC
+LIMIT  30;
+ audit_id |          occurred_at          | actor_type |     actor      |           action           |             target_claim             | target_user 
+----------+-------------------------------+------------+----------------+----------------------------+--------------------------------------+-------------
+       27 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       44 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       43 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       42 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       41 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       40 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       39 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       38 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       37 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       36 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       35 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       34 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       33 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       32 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       31 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       30 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       29 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       28 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       26 | 2026-11-09 07:46:10.487346+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
+       25 | 2026-11-09 07:46:10.485622+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
+       24 | 2026-11-09 07:46:10.482106+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
+       23 | 2026-11-09 07:46:10.479998+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
+       22 | 2026-11-09 07:46:10.478071+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       21 | 2026-11-09 07:46:10.473713+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
+       20 | 2026-11-09 07:46:10.4715+00   | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       19 | 2026-11-09 07:46:10.466477+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
+       18 | 2026-11-09 07:46:10.462484+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
+       17 | 2026-11-09 07:46:10.452494+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
+       16 | 2026-11-09 07:46:10.449864+00 | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
+       15 | 2026-11-09 07:46:10.444272+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
+(30 rows)
+
+SELECT claim_status,
+       screening_status,
+       count(*)              AS claim_count,
+       sum(claimed_amount)   AS total_claimed,
+       avg(claimed_amount)   AS avg_claimed
+FROM   claim
+GROUP  BY claim_status, screening_status
+ORDER  BY claim_count DESC;
+ claim_status  | screening_status | claim_count | total_claimed |      avg_claimed      
+---------------+------------------+-------------+---------------+-----------------------
+ DECIDED       | COMPLETED        |           3 |     144500.00 |    48166.666666666667
+ SUBMITTED     | FAILED           |           1 |     215000.00 |   215000.000000000000
+ SUBMITTED     | PENDING          |           1 |       5500.00 | 5500.0000000000000000
+ AWAITING_INFO | COMPLETED        |           1 |     125000.00 |   125000.000000000000
+(4 rows)
+
+SELECT adj.full_name                AS adjuster,
+       count(*)                     AS total_reviews,
+       count(*) FILTER (WHERE rv.review_action = 'APPROVED')       AS approvals,
+       count(*) FILTER (WHERE rv.review_action = 'REJECTED')       AS rejections,
+       count(*) FILTER (WHERE rv.review_action = 'INFO_REQUESTED') AS info_requests
+FROM   review rv
+JOIN   app_user adj ON adj.user_id = rv.reviewer_id
+GROUP  BY adj.full_name
+ORDER  BY total_reviews DESC;
+    adjuster    | total_reviews | approvals | rejections | info_requests 
+----------------+---------------+-----------+------------+---------------
+ Meera Pillai   |             2 |         0 |          1 |             1
+ Vikram Iyer    |             1 |         0 |          0 |             1
+ Arjun Sharma   |             1 |         1 |          0 |             0
+ Sneha Kulkarni |             1 |         1 |          0 |             0
+(4 rows)
+
+SELECT r.title,
+       count(m.match_id)                        AS times_matched,
+       round(avg(m.similarity_score)::numeric, 4) AS avg_similarity,
+       round(max(m.similarity_score)::numeric, 4) AS max_similarity
+FROM   reference_fraud_case r
+JOIN   screening_match m ON m.reference_case_id = r.case_id
+GROUP  BY r.case_id, r.title
+ORDER  BY times_matched DESC, avg_similarity DESC;
+                        title                        | times_matched | avg_similarity | max_similarity 
+-----------------------------------------------------+---------------+----------------+----------------
+ Staged Vehicle Collision — Highway NH-44            |             3 |         0.7085 |         0.9121
+ Medical Procedure Not Performed — Phantom Treatment |             2 |         0.7062 |         0.8822
+ Water Damage — Repeated Claims Same Address         |             2 |         0.6836 |         0.7456
+ Slip and Fall — Coordinated Claimant Network        |             1 |         0.7834 |         0.7834
+ Theft Claim — Item Never Owned                      |             1 |         0.7490 |         0.7490
+(5 rows)
+
+SELECT risk_indicator,
+       count(*)                AS assessment_count,
+       round(100.0 * count(*) / sum(count(*)) OVER (), 1) AS pct
+FROM   screening_assessment
+WHERE  status = 'COMPLETED'
+GROUP  BY risk_indicator
+ORDER  BY assessment_count DESC;
+ risk_indicator | assessment_count | pct  
+----------------+------------------+------
+ HIGH           |                2 | 50.0
+ LOW            |                1 | 25.0
+ MEDIUM         |                1 | 25.0
+(3 rows)
+
+SELECT u.full_name                        AS policyholder,
+       count(c.claim_id)                  AS total_claims,
+       sum(c.claimed_amount)              AS total_amount_claimed,
+       count(cd.decision_id) FILTER (WHERE cd.decision_status = 'APPROVED') AS approved,
+       count(cd.decision_id) FILTER (WHERE cd.decision_status = 'REJECTED') AS rejected
+FROM   app_user u
+JOIN   claim c        ON c.claimant_id = u.user_id
+LEFT JOIN claim_decision cd ON cd.claim_id = c.claim_id
+GROUP  BY u.user_id, u.full_name
+HAVING count(c.claim_id) > 0
+ORDER  BY total_claims DESC;
+  policyholder   | total_claims | total_amount_claimed | approved | rejected 
+-----------------+--------------+----------------------+----------+----------
+ Ananya Rao      |            2 |             93000.00 |        1 |        0
+ Mohan Das       |            1 |            215000.00 |        0 |        0
+ Kavitha Reddy   |            1 |            125000.00 |        0 |        0
+ Lakshmi Nambiar |            1 |             12000.00 |        1 |        0
+ Suresh Babu     |            1 |             45000.00 |        0 |        1
+(5 rows)
+
+SELECT date_trunc('month', submitted_at)::date AS month,
+       count(*)                                AS claims_submitted,
+       sum(claimed_amount)                     AS total_claimed,
+       count(*) FILTER (WHERE review_required) AS high_risk_flagged
+FROM   claim
+GROUP  BY date_trunc('month', submitted_at)
+ORDER  BY month;
+   month    | claims_submitted | total_claimed | high_risk_flagged 
+------------+------------------+---------------+-------------------
+ 2026-05-01 |                2 |     212500.00 |                 2
+ 2026-06-01 |                1 |      45000.00 |                 0
+ 2026-07-01 |                2 |     227000.00 |                 0
+ 2026-08-01 |                1 |       5500.00 |                 0
+(4 rows)
+
+SELECT c.claim_id,
+       u.full_name  AS claimant,
+       c.submitted_at
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+WHERE  NOT EXISTS (
+    SELECT 1
+    FROM   screening_assessment a
+    WHERE  a.claim_id = c.claim_id
+)
+ORDER  BY c.submitted_at;
+               claim_id               |  claimant  |      submitted_at      
+--------------------------------------+------------+------------------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao | 2026-08-02 04:30:00+00
+(1 row)
+
+SELECT case_id,
+       title,
+       created_at::date
+FROM   reference_fraud_case
+WHERE  is_active
+  AND  case_id NOT IN (
+      SELECT DISTINCT reference_case_id FROM screening_match
+  )
+ORDER  BY created_at;
+               case_id                |                            title                             | created_at 
+--------------------------------------+--------------------------------------------------------------+------------
+ c1000000-0000-0000-0000-000000000004 | Fire Damage — Arson Investigation Confirmed                  | 2026-02-08
+ c2000000-0000-0000-0000-000000000001 | Staged rear-end collision with a pre-arranged lead vehicle   | 2026-11-09
+ c2000000-0000-0000-0000-000000000002 | Repair invoice inflated by the workshop after approval       | 2026-11-09
+ c2000000-0000-0000-0000-000000000003 | Old dents and rust presented as fresh accident damage        | 2026-11-09
+ c2000000-0000-0000-0000-000000000004 | Same incident claimed twice under two policies               | 2026-11-09
+ c2000000-0000-0000-0000-000000000005 | Phantom passengers added to a minor collision                | 2026-11-09
+ c2000000-0000-0000-0000-000000000006 | Vehicle reported stolen after being sold to a scrap dealer   | 2026-11-09
+ c2000000-0000-0000-0000-000000000007 | Shop fire set deliberately to clear unsold stock and debt    | 2026-11-09
+ c2000000-0000-0000-0000-000000000008 | Hospital admission and surgery that never took place         | 2026-11-09
+ c2000000-0000-0000-0000-000000000009 | Whiplash injury exaggerated for months of compensation       | 2026-11-09
+ c2000000-0000-0000-0000-000000000010 | Swoop-and-squat crash caused by two cooperating cars         | 2026-11-09
+ c2000000-0000-0000-0000-000000000011 | Paper accident: collision invented with borrowed photos      | 2026-11-09
+ c2000000-0000-0000-0000-000000000012 | Burglary staged to claim jewellery that was never owned      | 2026-11-09
+ c2000000-0000-0000-0000-000000000013 | Slow pipe leak reported as a sudden burst                    | 2026-11-09
+ c2000000-0000-0000-0000-000000000014 | Policy bought after the loss had already happened            | 2026-11-09
+ c2000000-0000-0000-0000-000000000015 | Car abandoned and torched to escape loan payments            | 2026-11-09
+ c2000000-0000-0000-0000-000000000016 | Forged pharmacy and diagnostic bills added to a genuine stay | 2026-11-09
+ c2000000-0000-0000-0000-000000000017 | Same phone reported lost to several insurers                 | 2026-11-09
+ c2000000-0000-0000-0000-000000000018 | Two-wheeler fall staged to claim hospital and repair costs   | 2026-11-09
+(19 rows)
+
+SELECT c.claim_id,
+       u.full_name  AS claimant,
+       c.submitted_at,
+       latest.failure_reason
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+JOIN   (
+    SELECT DISTINCT ON (claim_id)
+           claim_id, status, failure_reason
+    FROM   screening_assessment
+    ORDER  BY claim_id, attempt_no DESC
+) latest ON latest.claim_id = c.claim_id AND latest.status = 'FAILED'
+WHERE  c.screening_status = 'FAILED';
+               claim_id               | claimant  |      submitted_at      |                              failure_reason                              
+--------------------------------------+-----------+------------------------+--------------------------------------------------------------------------
+ d1000000-0000-0000-0000-000000000004 | Mohan Das | 2026-07-02 02:30:00+00 | Embedding service unavailable: connection timeout after 30 s (attempt 1)
+(1 row)
+
+SELECT adj.full_name,
+       COUNT(*) AS approvals
+FROM   review rv
+JOIN   app_user adj ON adj.user_id = rv.reviewer_id
+WHERE  rv.review_action = 'APPROVED'
+GROUP  BY adj.user_id, adj.full_name
+HAVING COUNT(*) > (
+    SELECT AVG(adj_count)
+    FROM (
+        SELECT COUNT(*) AS adj_count
+        FROM   review
+        WHERE  review_action = 'APPROVED'
+        GROUP  BY reviewer_id
+    ) sub
+);
+ full_name | approvals 
+-----------+-----------
+(0 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       c.claim_status,
+       c.claimed_amount
+FROM   claim c
+JOIN   policy p ON p.policy_id = c.policy_id
+WHERE  p.policy_id IN (
+    SELECT policy_id
+    FROM   claim
+    GROUP  BY policy_id
+    HAVING count(*) >= 2
+)
+ORDER  BY p.policy_number, c.submitted_at;
+               claim_id               | policy_number | claim_status | claimed_amount 
+--------------------------------------+---------------+--------------+----------------
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | DECIDED      |       87500.00
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | SUBMITTED    |        5500.00
+(2 rows)
+
+SELECT u.full_name,
+       u.email,
+       (SELECT count(*) FROM notification n
+        WHERE  n.user_id = u.user_id AND n.read_at IS NULL) AS unread_count
+FROM   app_user u
+WHERE  EXISTS (
+    SELECT 1 FROM notification n
+    WHERE  n.user_id = u.user_id AND n.read_at IS NULL
+)
+ORDER  BY unread_count DESC;
+    full_name    |           email            | unread_count 
+-----------------+----------------------------+--------------
+ Kavitha Reddy   | holder.kavitha@example.com |            1
+ Lakshmi Nambiar | holder.lakshmi@example.com |            1
+(2 rows)
+
+SELECT r.title                                   AS reference_case,
+       m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4)     AS similarity,
+       round((SELECT avg(m2.similarity_score)
+              FROM   screening_match m2
+              WHERE  m2.reference_case_id = m.reference_case_id)::numeric, 4)
+                                                 AS case_avg_similarity
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+WHERE  m.similarity_score > (
+           SELECT avg(m2.similarity_score)
+           FROM   screening_match m2
+           WHERE  m2.reference_case_id = m.reference_case_id   -- correlation
+       )
+ORDER  BY r.title, similarity DESC;
+                   reference_case                    |            assessment_id             | match_rank | similarity | case_avg_similarity 
+-----------------------------------------------------+--------------------------------------+------------+------------+---------------------
+ Medical Procedure Not Performed — Phantom Treatment | e1000000-0000-0000-0000-000000000003 |          1 |     0.8822 |              0.7062
+ Staged Vehicle Collision — Highway NH-44            | e1000000-0000-0000-0000-000000000001 |          1 |     0.9121 |              0.7085
+ Water Damage — Repeated Claims Same Address         | e1000000-0000-0000-0000-000000000002 |          1 |     0.7456 |              0.6836
+(3 rows)
+
+WITH latest_assessment AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id,
+           assessment_id,
+           attempt_no,
+           status      AS screening_status,
+           outcome,
+           risk_indicator
+    FROM   screening_assessment
+    ORDER  BY claim_id, attempt_no DESC
+),
+latest_review AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id,
+           review_action AS last_review_action,
+           reviewed_at   AS last_reviewed_at
+    FROM   review
+    ORDER  BY claim_id, reviewed_at DESC
+),
+decision_info AS (
+    SELECT claim_id, decision_status, decided_at
+    FROM   claim_decision
+)
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.claim_status,
+       la.risk_indicator,
+       lr.last_review_action,
+       di.decision_status,
+       di.decided_at::date
+FROM   claim c
+JOIN   app_user u    ON u.user_id    = c.claimant_id
+LEFT JOIN latest_assessment la ON la.claim_id = c.claim_id
+LEFT JOIN latest_review     lr ON lr.claim_id = c.claim_id
+LEFT JOIN decision_info      di ON di.claim_id = c.claim_id
+ORDER  BY c.submitted_at DESC;
+               claim_id               |    claimant     | claim_status  | risk_indicator | last_review_action | decision_status | decided_at 
+--------------------------------------+-----------------+---------------+----------------+--------------------+-----------------+------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | SUBMITTED     |                |                    |                 | 
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | DECIDED       | LOW            | APPROVED           | APPROVED        | 2026-07-15
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | SUBMITTED     |                |                    |                 | 
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | DECIDED       | MEDIUM         | REJECTED           | REJECTED        | 2026-06-20
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | AWAITING_INFO | HIGH           | INFO_REQUESTED     |                 | 
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | DECIDED       | HIGH           | APPROVED           | APPROVED        | 2026-06-01
+(6 rows)
+
+WITH pair_counts AS (
+    SELECT m1.reference_case_id AS case_a,
+           m2.reference_case_id AS case_b,
+           count(*)              AS co_occurrence_count
+    FROM   screening_match m1
+    JOIN   screening_match m2
+        ON  m1.assessment_id = m2.assessment_id
+        AND m1.reference_case_id < m2.reference_case_id
+    GROUP  BY m1.reference_case_id, m2.reference_case_id
+)
+SELECT r1.title AS case_a_title,
+       r2.title AS case_b_title,
+       pc.co_occurrence_count
+FROM   pair_counts pc
+JOIN   reference_fraud_case r1 ON r1.case_id = pc.case_a
+JOIN   reference_fraud_case r2 ON r2.case_id = pc.case_b
+ORDER  BY co_occurrence_count DESC;
+                    case_a_title                     |                    case_b_title                     | co_occurrence_count 
+-----------------------------------------------------+-----------------------------------------------------+---------------------
+ Staged Vehicle Collision — Highway NH-44            | Medical Procedure Not Performed — Phantom Treatment |                   2
+ Staged Vehicle Collision — Highway NH-44            | Water Damage — Repeated Claims Same Address         |                   2
+ Water Damage — Repeated Claims Same Address         | Slip and Fall — Coordinated Claimant Network        |                   1
+ Medical Procedure Not Performed — Phantom Treatment | Theft Claim — Item Never Owned                      |                   1
+ Staged Vehicle Collision — Highway NH-44            | Theft Claim — Item Never Owned                      |                   1
+ Staged Vehicle Collision — Highway NH-44            | Slip and Fall — Coordinated Claimant Network        |                   1
+ Water Damage — Repeated Claims Same Address         | Medical Procedure Not Performed — Phantom Treatment |                   1
+(7 rows)
+
+WITH high_risk_claims AS (
+    SELECT c.claim_id,
+           c.claimed_amount,
+           c.submitted_at,
+           floor(extract(epoch FROM (now() - c.submitted_at)) / 3600)::int AS age_hours
+    FROM   claim c
+    WHERE  c.review_required AND c.claim_status <> 'DECIDED'
+),
+last_review AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id, review_action, reviewed_at
+    FROM   review
+    ORDER  BY claim_id, reviewed_at DESC
+)
+SELECT hr.claim_id,
+       hr.claimed_amount,
+       hr.age_hours,
+       COALESCE(lr.review_action, 'NOT_STARTED') AS current_review_state,
+       lr.reviewed_at
+FROM   high_risk_claims hr
+LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
+ORDER  BY hr.age_hours DESC;
+               claim_id               | claimed_amount | age_hours | current_review_state |      reviewed_at       
+--------------------------------------+----------------+-----------+----------------------+------------------------
+ d1000000-0000-0000-0000-000000000003 |      125000.00 |      4107 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
+(1 row)
+
+WITH RECURSIVE months (month_start, last_month) AS (
+    -- anchor member: the first month that has a claim
+    SELECT date_trunc('month', min(submitted_at))::date,
+           date_trunc('month', max(submitted_at))::date
+    FROM   claim
+    UNION ALL
+    -- recursive member: next month, until the last month with a claim
+    SELECT (month_start + interval '1 month')::date,
+           last_month
+    FROM   months
+    WHERE  month_start < last_month
+)
+SELECT m.month_start                                  AS month,
+       count(c.claim_id)                              AS claims_submitted,
+       coalesce(sum(c.claimed_amount), 0)             AS total_claimed,
+       count(c.claim_id) FILTER (WHERE c.review_required) AS high_risk_flagged
+FROM   months m
+LEFT JOIN claim c
+       ON date_trunc('month', c.submitted_at)::date = m.month_start
+GROUP  BY m.month_start
+ORDER  BY m.month_start;
+   month    | claims_submitted | total_claimed | high_risk_flagged 
+------------+------------------+---------------+-------------------
+ 2026-05-01 |                2 |     212500.00 |                 2
+ 2026-06-01 |                1 |      45000.00 |                 0
+ 2026-07-01 |                2 |     227000.00 |                 0
+ 2026-08-01 |                1 |       5500.00 |                 0
+(4 rows)
+
+WITH claim_events AS (
+    SELECT al.occurred_at,
+           al.audit_id,
+           al.action,
+           al.actor_type,
+           COALESCE(actor.full_name, 'SYSTEM') AS actor,
+           al.details
+    FROM   audit_log al
+    LEFT JOIN app_user actor ON actor.user_id = al.actor_id
+    WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000001'
+)
+SELECT row_number() OVER (ORDER BY occurred_at, audit_id) AS step,
+       occurred_at,
+       action,
+       actor_type,
+       actor,
+       details
+FROM   claim_events
+ORDER  BY step;
+ step |          occurred_at          |       action        | actor_type |    actor     |                                                       details                                                        
+------+-------------------------------+---------------------+------------+--------------+----------------------------------------------------------------------------------------------------------------------
+    1 | 2026-11-09 07:46:10.419715+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
+    2 | 2026-11-09 07:46:10.432882+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
+    3 | 2026-11-09 07:46:10.462484+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
+    4 | 2026-11-09 07:46:10.466477+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
+(4 rows)
+
+WITH policy_stats AS (
+    SELECT p.policy_id,
+           p.policy_number,
+           u.full_name                   AS holder,
+           count(c.claim_id)             AS claims_filed,
+           coalesce(sum(c.claimed_amount), 0) AS total_exposure,
+           count(cd.decision_id)         AS decisions_made
+    FROM   policy p
+    JOIN   app_user u ON u.user_id = p.holder_id
+    LEFT JOIN claim c          ON c.policy_id  = p.policy_id
+    LEFT JOIN claim_decision cd ON cd.claim_id = c.claim_id
+    GROUP  BY p.policy_id, p.policy_number, u.full_name
+)
+SELECT *,
+       CASE WHEN claims_filed = 0 THEN 'NO_CLAIMS'
+            WHEN decisions_made = claims_filed THEN 'FULLY_DECIDED'
+            ELSE 'IN_PROGRESS'
+       END AS status_label
+FROM   policy_stats
+ORDER  BY total_exposure DESC;
+              policy_id               | policy_number |     holder      | claims_filed | total_exposure | decisions_made | status_label  
+--------------------------------------+---------------+-----------------+--------------+----------------+----------------+---------------
+ b1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das       |            1 |      215000.00 |              0 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy   |            1 |      125000.00 |              0 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      |            2 |       93000.00 |              1 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     |            1 |       45000.00 |              1 | FULLY_DECIDED
+ b1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar |            1 |       12000.00 |              1 | FULLY_DECIDED
+ b1000000-0000-0000-0000-000000000006 | POL-2025-0099 | Ananya Rao      |            0 |              0 |              0 | NO_CLAIMS
+(6 rows)
+
+SELECT u.full_name  AS claimant,
+       c.claim_id,
+       c.claimed_amount,
+       RANK() OVER (PARTITION BY c.claimant_id ORDER BY c.claimed_amount DESC) AS amount_rank
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY u.full_name, amount_rank;
+    claimant     |               claim_id               | claimed_amount | amount_rank 
+-----------------+--------------------------------------+----------------+-------------
+ Ananya Rao      | d1000000-0000-0000-0000-000000000001 |       87500.00 |           1
+ Ananya Rao      | d1000000-0000-0000-0000-000000000006 |        5500.00 |           2
+ Kavitha Reddy   | d1000000-0000-0000-0000-000000000003 |      125000.00 |           1
+ Lakshmi Nambiar | d1000000-0000-0000-0000-000000000005 |       12000.00 |           1
+ Mohan Das       | d1000000-0000-0000-0000-000000000004 |      215000.00 |           1
+ Suresh Babu     | d1000000-0000-0000-0000-000000000002 |       45000.00 |           1
+(6 rows)
+
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.submitted_at::date,
+       c.claimed_amount,
+       SUM(c.claimed_amount) OVER (ORDER BY c.submitted_at
+                                   ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+                           AS running_total
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.submitted_at;
+               claim_id               |    claimant     | submitted_at | claimed_amount | running_total 
+--------------------------------------+-----------------+--------------+----------------+---------------
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | 2026-05-15   |       87500.00 |      87500.00
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | 2026-05-22   |      125000.00 |     212500.00
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | 2026-06-03   |       45000.00 |     257500.00
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | 2026-07-02   |      215000.00 |     472500.00
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | 2026-07-11   |       12000.00 |     484500.00
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | 2026-08-02   |        5500.00 |     490000.00
+(6 rows)
+
+SELECT a.claim_id,
+       m.match_rank,
+       r.title             AS matched_case,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       CASE WHEN ROW_NUMBER() OVER (PARTITION BY m.assessment_id ORDER BY m.similarity_score DESC) = 1
+            THEN 'TOP MATCH'
+            ELSE ''
+       END AS top_match_flag
+FROM   screening_match m
+JOIN   screening_assessment a ON a.assessment_id = m.assessment_id
+JOIN   reference_fraud_case r ON r.case_id       = m.reference_case_id
+ORDER  BY a.claim_id, m.match_rank;
+               claim_id               | match_rank |                    matched_case                     | similarity | top_match_flag 
+--------------------------------------+------------+-----------------------------------------------------+------------+----------------
+ d1000000-0000-0000-0000-000000000001 |          1 | Staged Vehicle Collision — Highway NH-44            |     0.9121 | TOP MATCH
+ d1000000-0000-0000-0000-000000000001 |          2 | Slip and Fall — Coordinated Claimant Network        |     0.7834 | 
+ d1000000-0000-0000-0000-000000000001 |          3 | Water Damage — Repeated Claims Same Address         |     0.6215 | 
+ d1000000-0000-0000-0000-000000000002 |          1 | Water Damage — Repeated Claims Same Address         |     0.7456 | TOP MATCH
+ d1000000-0000-0000-0000-000000000002 |          2 | Staged Vehicle Collision — Highway NH-44            |     0.6102 | 
+ d1000000-0000-0000-0000-000000000002 |          3 | Medical Procedure Not Performed — Phantom Treatment |     0.5301 | 
+ d1000000-0000-0000-0000-000000000003 |          1 | Medical Procedure Not Performed — Phantom Treatment |     0.8822 | TOP MATCH
+ d1000000-0000-0000-0000-000000000003 |          2 | Theft Claim — Item Never Owned                      |     0.7490 | 
+ d1000000-0000-0000-0000-000000000003 |          3 | Staged Vehicle Collision — Highway NH-44            |     0.6033 | 
+(9 rows)
+
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.submitted_at::date,
+       c.claimed_amount,
+       LAG (c.claimed_amount) OVER (ORDER BY c.submitted_at) AS prev_claim_amount,
+       LEAD(c.claimed_amount) OVER (ORDER BY c.submitted_at) AS next_claim_amount,
+       c.claimed_amount
+         - LAG(c.claimed_amount, 1, c.claimed_amount) OVER (ORDER BY c.submitted_at)
+                                                            AS delta_from_prev
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.submitted_at;
+               claim_id               |    claimant     | submitted_at | claimed_amount | prev_claim_amount | next_claim_amount | delta_from_prev 
+--------------------------------------+-----------------+--------------+----------------+-------------------+-------------------+-----------------
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | 2026-05-15   |       87500.00 |                   |         125000.00 |            0.00
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | 2026-05-22   |      125000.00 |          87500.00 |          45000.00 |        37500.00
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | 2026-06-03   |       45000.00 |         125000.00 |         215000.00 |       -80000.00
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | 2026-07-02   |      215000.00 |          45000.00 |          12000.00 |       170000.00
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | 2026-07-11   |       12000.00 |         215000.00 |           5500.00 |      -203000.00
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | 2026-08-02   |        5500.00 |          12000.00 |                   |        -6500.00
+(6 rows)
+
+SELECT m.assessment_id,
+       r.title             AS case_matched,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       DENSE_RANK() OVER (ORDER BY m.similarity_score DESC) AS global_rank
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+ORDER  BY global_rank
+LIMIT  10;
+            assessment_id             |                    case_matched                     | similarity | global_rank 
+--------------------------------------+-----------------------------------------------------+------------+-------------
+ e1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44            |     0.9121 |           1
+ e1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment |     0.8822 |           2
+ e1000000-0000-0000-0000-000000000001 | Slip and Fall — Coordinated Claimant Network        |     0.7834 |           3
+ e1000000-0000-0000-0000-000000000003 | Theft Claim — Item Never Owned                      |     0.7490 |           4
+ e1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address         |     0.7456 |           5
+ e1000000-0000-0000-0000-000000000001 | Water Damage — Repeated Claims Same Address         |     0.6215 |           6
+ e1000000-0000-0000-0000-000000000002 | Staged Vehicle Collision — Highway NH-44            |     0.6102 |           7
+ e1000000-0000-0000-0000-000000000003 | Staged Vehicle Collision — Highway NH-44            |     0.6033 |           8
+ e1000000-0000-0000-0000-000000000002 | Medical Procedure Not Performed — Phantom Treatment |     0.5301 |           9
+(9 rows)
+
+SELECT c.claim_id,
+       u.full_name     AS claimant,
+       c.claimed_amount,
+       NTILE(4) OVER (ORDER BY c.claimed_amount) AS amount_quartile
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.claimed_amount;
+               claim_id               |    claimant     | claimed_amount | amount_quartile 
+--------------------------------------+-----------------+----------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      |        5500.00 |               1
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar |       12000.00 |               1
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     |       45000.00 |               2
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      |       87500.00 |               2
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   |      125000.00 |               3
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       |      215000.00 |               4
+(6 rows)
+
+SELECT DISTINCT ON (a.claim_id)
+       a.claim_id,
+       FIRST_VALUE(a.attempt_no)    OVER w AS first_attempt,
+       LAST_VALUE (a.attempt_no)    OVER w AS last_attempt,
+       FIRST_VALUE(a.status)        OVER w AS first_status,
+       LAST_VALUE (a.status)        OVER w AS final_status
+FROM   screening_assessment a
+WINDOW w AS (PARTITION BY a.claim_id ORDER BY a.attempt_no
+             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING);
+               claim_id               | first_attempt | last_attempt | first_status | final_status 
+--------------------------------------+---------------+--------------+--------------+--------------
+ d1000000-0000-0000-0000-000000000001 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000002 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000003 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000004 |             1 |            1 | FAILED       | FAILED
+ d1000000-0000-0000-0000-000000000005 |             1 |            1 | COMPLETED    | COMPLETED
+(5 rows)
+
+SELECT
+    'CLAIM'             AS section,
+    c.claim_id::text    AS identifier,
+    u.full_name         AS party,
+    c.claimed_amount::text AS amount,
+    c.claim_status      AS status,
+    NULL                AS detail
+FROM   claim c JOIN app_user u ON u.user_id = c.claimant_id
+WHERE  c.claim_id = 'd1000000-0000-0000-0000-000000000001'
+UNION ALL
+SELECT
+    'SCREENING'                     AS section,
+    a.assessment_id::text           AS identifier,
+    a.risk_indicator                AS party,
+    a.risk_rule_version             AS amount,
+    a.status                        AS status,
+    a.similarity_metric             AS detail
+FROM   screening_assessment a
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000001'
+ORDER  BY section;
+  section  |              identifier              |   party    |  amount  |  status   |      detail       
+-----------+--------------------------------------+------------+----------+-----------+-------------------
+ CLAIM     | d1000000-0000-0000-0000-000000000001 | Ananya Rao | 87500.00 | DECIDED   | 
+ SCREENING | e1000000-0000-0000-0000-000000000001 | HIGH       | v1.1     | COMPLETED | cosine_similarity
+(2 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       u.full_name        AS claimant,
+       c.claimed_amount,
+       c.claim_status,
+       c.screening_status,
+       c.review_required,
+       a.risk_indicator,
+       a.risk_rule_version,
+       c.submitted_at,
+       extract(epoch FROM (now() - c.submitted_at)) / 3600
+                          AS age_hours
+FROM   claim c
+JOIN   policy   p  ON p.policy_id  = c.policy_id
+JOIN   app_user u  ON u.user_id    = c.claimant_id
+LEFT JOIN LATERAL (
+    SELECT risk_indicator, risk_rule_version, status
+    FROM   screening_assessment
+    WHERE  claim_id = c.claim_id
+    ORDER  BY attempt_no DESC LIMIT 1
+) a ON true
+WHERE  c.claim_status <> 'DECIDED'
+ORDER  BY c.review_required DESC, c.submitted_at ASC;
+               claim_id               | policy_number |   claimant    | claimed_amount | claim_status  | screening_status | review_required | risk_indicator | risk_rule_version |      submitted_at      |       age_hours       
+--------------------------------------+---------------+---------------+----------------+---------------+------------------+-----------------+----------------+-------------------+------------------------+-----------------------
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4107.2709543130555556
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3125.2709543130555556
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2379.2709543130555556
+(3 rows)
+
+SELECT rule_version,
+       is_active,
+       (definition->>'high_similarity_threshold')::numeric   AS high_threshold,
+       (definition->>'medium_similarity_threshold')::numeric AS medium_threshold,
+       (definition->>'description')                          AS description
+FROM   risk_rule
+WHERE  is_active;
+ rule_version | is_active | high_threshold | medium_threshold |                                                description                                                
+--------------+-----------+----------------+------------------+-----------------------------------------------------------------------------------------------------------
+ v2.0-minilm  | t         |           0.65 |             0.55 | Calibrated for sentence-transformers/all-MiniLM-L6-v2 (normalized-v1) on the synthetic calibration sample
+(1 row)
+
+SELECT a.assessment_id,
+       a.claim_id,
+       a.risk_indicator                          AS stored_indicator,
+       fn_compute_claim_risk(a.assessment_id)    AS computed_indicator
+FROM   screening_assessment a
+WHERE  a.status = 'COMPLETED';
+            assessment_id             |               claim_id               | stored_indicator | computed_indicator 
+--------------------------------------+--------------------------------------+------------------+--------------------
+ e1000000-0000-0000-0000-000000000001 | d1000000-0000-0000-0000-000000000001 | HIGH             | HIGH
+ e1000000-0000-0000-0000-000000000002 | d1000000-0000-0000-0000-000000000002 | MEDIUM           | HIGH
+ e1000000-0000-0000-0000-000000000003 | d1000000-0000-0000-0000-000000000003 | HIGH             | HIGH
+ e1000000-0000-0000-0000-000000000005 | d1000000-0000-0000-0000-000000000005 | LOW              | LOW
+(4 rows)
+
+SELECT r.case_id,
+       r.title,
+       round((1 - (r.embedding <=> a.description_embedding))::numeric, 4) AS cosine_similarity
+FROM   reference_fraud_case r,
+       screening_assessment a
+WHERE  r.is_active AND r.is_confirmed
+  AND  r.embedding_model_id = a.embedding_model_id
+  AND  a.assessment_id = 'e1000000-0000-0000-0000-000000000001'
+ORDER  BY r.embedding <=> a.description_embedding
+LIMIT  3;
+               case_id                |                        title                        | cosine_similarity 
+--------------------------------------+-----------------------------------------------------+-------------------
+ c1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44            |           -0.8390
+ c1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address         |           -0.8891
+ c1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment |           -0.9303
+(3 rows)
+
+SELECT c.claim_id,
+       c.claim_status,
+       c.screening_status,
+       cd.decision_status,
+       a.status  AS assessment_status,
+       a.outcome AS assessment_outcome
+FROM   claim_decision cd
+JOIN   claim c ON c.claim_id = cd.claim_id
+JOIN   review rv ON rv.review_id = cd.review_id
+LEFT JOIN screening_assessment a ON a.assessment_id = rv.assessment_id
+ORDER  BY cd.decided_at;
+               claim_id               | claim_status | screening_status | decision_status | assessment_status | assessment_outcome 
+--------------------------------------+--------------+------------------+-----------------+-------------------+--------------------
+ d1000000-0000-0000-0000-000000000001 | DECIDED      | COMPLETED        | APPROVED        | COMPLETED         | MATCHES_FOUND
+ d1000000-0000-0000-0000-000000000002 | DECIDED      | COMPLETED        | REJECTED        | COMPLETED         | MATCHES_FOUND
+ d1000000-0000-0000-0000-000000000005 | DECIDED      | COMPLETED        | APPROVED        | COMPLETED         | NO_MATCH
+(3 rows)
+
+SELECT * FROM v_stale_pending_screening;
+               claim_id               |      submitted_at      | last_attempt_at | last_attempt_no 
+--------------------------------------+------------------------+-----------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | 2026-08-02 04:30:00+00 |                 |               0
+(1 row)
+
+SELECT 'v_claim_status_summary'   AS view_name, claim_status::text AS col1,
+       screening_status::text AS col2, claim_count::text AS col3,
+       review_required::text AS col4
+FROM   v_claim_status_summary;
+       view_name        |     col1      |   col2    | col3 | col4  
+------------------------+---------------+-----------+------+-------
+ v_claim_status_summary | SUBMITTED     | PENDING   | 1    | false
+ v_claim_status_summary | SUBMITTED     | FAILED    | 1    | false
+ v_claim_status_summary | DECIDED       | COMPLETED | 1    | true
+ v_claim_status_summary | AWAITING_INFO | COMPLETED | 1    | true
+ v_claim_status_summary | DECIDED       | COMPLETED | 2    | false
+(5 rows)
+
+SELECT 'v_adjuster_workload' AS view_name, reviewer_id::text AS adjuster_id,
+       review_count::text, approvals::text, rejections::text
+FROM   v_adjuster_workload;
+      view_name      |             adjuster_id              | review_count | approvals | rejections 
+---------------------+--------------------------------------+--------------+-----------+------------
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000003 | 1            | 0         | 0
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000002 | 2            | 0         | 1
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000001 | 1            | 1         | 0
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000004 | 1            | 1         | 0
+(4 rows)
+
+SELECT 'v_reference_match_frequency' AS view_name, title,
+       match_count::text, round(average_similarity::numeric,4)::text AS avg_sim
+FROM   v_reference_match_frequency;
+          view_name          |                        title                        | match_count | avg_sim 
+-----------------------------+-----------------------------------------------------+-------------+---------
+ v_reference_match_frequency | Theft Claim — Item Never Owned                      | 1           | 0.7490
+ v_reference_match_frequency | Staged Vehicle Collision — Highway NH-44            | 3           | 0.7085
+ v_reference_match_frequency | Medical Procedure Not Performed — Phantom Treatment | 2           | 0.7062
+ v_reference_match_frequency | Water Damage — Repeated Claims Same Address         | 2           | 0.6836
+ v_reference_match_frequency | Slip and Fall — Coordinated Claimant Network        | 1           | 0.7834
+(5 rows)
+
+SELECT 'v_high_risk_aged_queue' AS view_name, claim_id::text, claimed_amount::text,
+       age_hours::text
+FROM   v_high_risk_aged_queue;
+       view_name        |               claim_id               | claimed_amount | age_hours 
+------------------------+--------------------------------------+----------------+-----------
+ v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4107
+(1 row)
+
+SELECT 'v_risk_distribution_over_time' AS view_name, assessment_day::text,
+       risk_indicator, assessment_count::text
+FROM   v_risk_distribution_over_time;
+           view_name           | assessment_day | risk_indicator | assessment_count 
+-------------------------------+----------------+----------------+------------------
+ v_risk_distribution_over_time | 2026-11-09     | HIGH           | 2
+ v_risk_distribution_over_time | 2026-11-09     | LOW            | 1
+ v_risk_distribution_over_time | 2026-11-09     | MEDIUM         | 1
+(3 rows)
+
+SELECT
+    relname AS tablename,
+    n_live_tup AS estimated_row_count
+FROM pg_stat_user_tables
+ORDER BY relname;
+      tablename       | estimated_row_count 
+----------------------+---------------------
+ app_role             |                   3
+ app_user             |                  12
+ audit_log            |                  44
+ claim                |                   6
+ claim_decision       |                   3
+ embedding_model      |                   2
+ information_response |                   1
+ notification         |                   5
+ policy               |                   6
+ reference_fraud_case |                  25
+ review               |                   5
+ risk_rule            |                   3
+ screening_assessment |                   5
+ screening_match      |                   9
+ user_session         |                   0
+(15 rows)
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO screening_assessment
+      (claim_id, attempt_no, status, outcome, risk_indicator, risk_rule_version,
+       embedding_model_id, description_embedding, top_k, similarity_metric)
+    SELECT 'd1000000-0000-0000-0000-000000000006', 99, 'COMPLETED', 'NO_MATCH', 'LOW', 'v9.9-missing',
+           1, embedding, 3, 'cosine_similarity'
+    FROM   reference_fraud_case WHERE case_id = 'c1000000-0000-0000-0000-000000000001';
+    RAISE NOTICE 'FAIL: unknown risk_rule_version was accepted';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'PASS: unknown rule version rejected (%): %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: unknown rule version rejected (23503): insert or update on table "screening_assessment" violates foreign key constraint "fk_assessment_risk_rule_version"
+DO
+DO $$
+DECLARE
+  v_audit_before  bigint;  v_audit_after  bigint;
+  v_review_before bigint;  v_review_after bigint;
+  v_notif_before  bigint;  v_notif_after  bigint;
+  v_status        text;
+  v_review uuid; v_decision uuid; v_notification uuid;
+BEGIN
+  -- (a) blocked approval
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                         'a2000000-0000-0000-0000-000000000001',
+                         'APPROVED', 'Attempting approval while screening has FAILED.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'FAIL: approval of a FAILED-screening claim was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2a blocked as expected (%): %', SQLSTATE, SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_after FROM review    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  RAISE NOTICE 'H2a %: audit rows % -> %, reviews % -> %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after;
+
+  -- (b) success followed by a later failure in the same unit of work
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_before  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                         'a2000000-0000-0000-0000-000000000003',
+                         'REJECTED', 'Hospital records could not be verified.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'H2b inside the unit: review %, decision %, audit rows now %',
+      v_review, v_decision,
+      (SELECT count(*) FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000003');
+    RAISE EXCEPTION 'simulated failure of a later step (e.g. payment service)';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2b rolled back after: %', SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_after FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_after  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT claim_status INTO v_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  RAISE NOTICE 'H2b %: audit % -> %, reviews % -> %, notifications % -> %, claim_status %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after
+              AND v_notif_before = v_notif_after AND v_status <> 'DECIDED' THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after,
+    v_notif_before, v_notif_after, v_status;
+END $$;
+NOTICE:  H2a blocked as expected (23514): approval blocked: screening status is FAILED
+NOTICE:  H2a PASS: audit rows 2 -> 2, reviews 0 -> 0
+NOTICE:  H2b inside the unit: review 61e5a474-5a8e-47c0-a88f-956c7a84de6a, decision c41ccd71-ed53-4d9a-8d74-5ae9b99407fa, audit rows now 5
+NOTICE:  H2b rolled back after: simulated failure of a later step (e.g. payment service)
+NOTICE:  H2b PASS: audit 3 -> 3, reviews 1 -> 1, notifications 1 -> 1, claim_status AWAITING_INFO
+DO
+SELECT 'before BEGIN' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+    stage     | claim_status  | audit_rows | decisions | notifications 
+--------------+---------------+------------+-----------+---------------
+ before BEGIN | AWAITING_INFO |          3 |         0 |             1
+(1 row)
+
+BEGIN;
+BEGIN
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                     'a2000000-0000-0000-0000-000000000003',
+                     'REJECTED', 'Hospital records could not be verified.');
+             p_review_id              |            p_decision_id             |          p_notification_id           
+--------------------------------------+--------------------------------------+--------------------------------------
+ 4befc0eb-0363-461f-84ae-61c16031b543 | 57f621de-9260-4012-a082-c7dcd634b25a | b2ed1d42-8f75-438f-8b49-d8e5eda43445
+(1 row)
+
+SELECT 'inside transaction' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+       stage        | claim_status | audit_rows | decisions | notifications 
+--------------------+--------------+------------+-----------+---------------
+ inside transaction | DECIDED      |          5 |         1 |             2
+(1 row)
+
+ROLLBACK;
+ROLLBACK
+SELECT 'after ROLLBACK' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+     stage      | claim_status  | audit_rows | decisions | notifications 
+----------------+---------------+------------+-----------+---------------
+ after ROLLBACK | AWAITING_INFO |          3 |         0 |             1
+(1 row)
+
+-- exit code: 0
+
+==================================================================
+== database/queries/claimguard_queries_v1.sql  (statements echoed with -e)
+==================================================================
+SELECT u.user_id,
+       u.full_name,
+       u.email,
+       r.role_name,
+       u.created_at::date AS joined_date
+FROM   app_user u
+JOIN   app_role r ON r.role_id = u.role_id
+WHERE  u.is_active
+ORDER  BY r.role_name, u.full_name;
+               user_id                |    full_name    |                email                |    role_name    | joined_date 
+--------------------------------------+-----------------+-------------------------------------+-----------------+-------------
+ a1000000-0000-0000-0000-000000000001 | Priya Nair      | admin.priya@claimguard.internal     | ADMIN           | 2026-01-10
+ a1000000-0000-0000-0000-000000000002 | Rajan Menon     | admin.rajan@claimguard.internal     | ADMIN           | 2026-01-10
+ a2000000-0000-0000-0000-000000000001 | Arjun Sharma    | adjuster.arjun@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-12
+ a2000000-0000-0000-0000-000000000002 | Meera Pillai    | adjuster.meera@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-12
+ a2000000-0000-0000-0000-000000000004 | Sneha Kulkarni  | adjuster.sneha@claimguard.internal  | CLAIMS_ADJUSTER | 2026-01-14
+ a2000000-0000-0000-0000-000000000003 | Vikram Iyer     | adjuster.vikram@claimguard.internal | CLAIMS_ADJUSTER | 2026-01-13
+ a3000000-0000-0000-0000-000000000001 | Ananya Rao      | holder.ananya@example.com           | POLICYHOLDER    | 2026-02-01
+ a3000000-0000-0000-0000-000000000003 | Kavitha Reddy   | holder.kavitha@example.com          | POLICYHOLDER    | 2026-02-05
+ a3000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | holder.lakshmi@example.com          | POLICYHOLDER    | 2026-02-10
+ a3000000-0000-0000-0000-000000000004 | Mohan Das       | holder.mohan@example.com            | POLICYHOLDER    | 2026-02-07
+ a3000000-0000-0000-0000-000000000002 | Suresh Babu     | holder.suresh@example.com           | POLICYHOLDER    | 2026-02-03
+(11 rows)
+
+SELECT p.policy_number,
+       u.full_name           AS holder_name,
+       p.effective_date,
+       p.expiry_date,
+       (p.expiry_date - p.effective_date) AS coverage_days
+FROM   policy p
+JOIN   app_user u ON u.user_id = p.holder_id
+WHERE  p.is_active
+ORDER  BY p.effective_date DESC;
+ policy_number |   holder_name   | effective_date | expiry_date | coverage_days 
+---------------+-----------------+----------------+-------------+---------------
+ POL-2026-0005 | Lakshmi Nambiar | 2026-04-01     | 2027-04-01  |           365
+ POL-2026-0004 | Mohan Das       | 2026-03-01     | 2027-03-01  |           365
+ POL-2026-0002 | Suresh Babu     | 2026-02-01     | 2027-02-01  |           365
+ POL-2026-0001 | Ananya Rao      | 2026-01-01     | 2027-01-01  |           365
+ POL-2026-0003 | Kavitha Reddy   | 2025-06-01     | 2026-06-01  |           365
+(5 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       u.full_name          AS claimant,
+       c.incident_date,
+       c.claimed_amount,
+       c.claim_status,
+       c.screening_status,
+       c.review_required
+FROM   claim c
+JOIN   policy p   ON p.policy_id  = c.policy_id
+JOIN   app_user u ON u.user_id    = c.claimant_id
+ORDER  BY c.submitted_at DESC;
+               claim_id               | policy_number |    claimant     | incident_date | claimed_amount | claim_status  | screening_status | review_required 
+--------------------------------------+---------------+-----------------+---------------+----------------+---------------+------------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao      | 2026-08-01    |        5500.00 | SUBMITTED     | PENDING          | f
+ d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar | 2026-07-10    |       12000.00 | DECIDED       | COMPLETED        | f
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das       | 2026-07-01    |      215000.00 | SUBMITTED     | FAILED           | f
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     | 2026-06-02    |       45000.00 | DECIDED       | COMPLETED        | f
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy   | 2026-05-20    |      125000.00 | AWAITING_INFO | COMPLETED        | t
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      | 2026-05-14    |       87500.00 | DECIDED       | COMPLETED        | t
+(6 rows)
+
+SELECT case_id,
+       title,
+       left(description, 100) || '...' AS description_excerpt,
+       is_confirmed,
+       created_at::date
+FROM   reference_fraud_case
+WHERE  is_active
+ORDER  BY created_at DESC;
+               case_id                |                            title                             |                                           description_excerpt                                           | is_confirmed | created_at 
+--------------------------------------+--------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+--------------+------------
+ c2000000-0000-0000-0000-000000000018 | Two-wheeler fall staged to claim hospital and repair costs   | The rider said his motorbike skidded on gravel near a construction site, causing a fractured wrist a... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000012 | Burglary staged to claim jewellery that was never owned      | The household reported a break-in and listed gold jewellery and electronics worth several lakh rupee... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000013 | Slow pipe leak reported as a sudden burst                    | The claim described a pipe bursting overnight and flooding the flat, ruining flooring and furniture.... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000014 | Policy bought after the loss had already happened            | Insurance was taken online late at night, and a claim for flood damage to the car was filed two days... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000015 | Car abandoned and torched to escape loan payments            | An owner behind on EMI payments reported his hatchback stolen, and it was found burnt out at a quarr... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000016 | Forged pharmacy and diagnostic bills added to a genuine stay | The patient's three-day hospital stay was real, but the claim added MRI scans, specialist visits and... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000017 | Same phone reported lost to several insurers                 | A premium smartphone was declared lost on a train and claimed under three gadget policies taken out ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000001 | Staged rear-end collision with a pre-arranged lead vehicle   | Investigators found that the 'victim' car braked sharply without reason on an empty city road so the... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000002 | Repair invoice inflated by the workshop after approval       | The approved estimate covered a bumper and one headlamp, but the final bill added a radiator, both a... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000003 | Old dents and rust presented as fresh accident damage        | A policyholder bought cover for a car that already had a crushed door and a cracked windscreen, then... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000004 | Same incident claimed twice under two policies               | One minor parking-lot scrape was reported to two different insurers within a week, each claim using ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000005 | Phantom passengers added to a minor collision                | After a low-speed bump, four injury claims were filed by people said to be riding in the car. Toll c... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000006 | Vehicle reported stolen after being sold to a scrap dealer   | The owner told police his SUV was taken from outside his house at night and claimed the full insured... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000007 | Shop fire set deliberately to clear unsold stock and debt    | A textile shop burned down overnight shortly after the owner increased the sum insured. Fire officer... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000008 | Hospital admission and surgery that never took place         | A health claim included discharge summaries, pharmacy bills and an operation note for a knee procedu... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000009 | Whiplash injury exaggerated for months of compensation       | Following a gentle bump in slow traffic, the claimant reported severe neck and back pain, months of ... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000010 | Swoop-and-squat crash caused by two cooperating cars         | One car cut in sharply in front of the insured vehicle while a second car boxed it in from the side,... | t            | 2026-11-09
+ c2000000-0000-0000-0000-000000000011 | Paper accident: collision invented with borrowed photos      | Two friends filed a claim for a crash at a junction, with photos, a sketch and witness statements. N... | t            | 2026-11-09
+ c1000000-0000-0000-0000-000000000006 | Slip and Fall — Coordinated Claimant Network                 | Multiple unrelated claimants submitted slip-and-fall claims against the same commercial property wit... | t            | 2026-02-12
+ c1000000-0000-0000-0000-000000000005 | Theft Claim — Item Never Owned                               | High-value electronics theft claimed. Purchase receipts provided were forged. Forensic analysis conf... | t            | 2026-02-10
+ c1000000-0000-0000-0000-000000000004 | Fire Damage — Arson Investigation Confirmed                  | Property fire reported as accidental. Fire investigation report confirmed accelerant use. Claimant h... | t            | 2026-02-08
+ c1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment          | Claim submitted for surgical procedure. Hospital records did not confirm the procedure. Provider and... | t            | 2026-02-05
+ c1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address                  | Multiple water-damage claims filed within 12 months for the same residential address under different... | t            | 2026-02-03
+ c1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44                     | Claimant reported a head-on collision on highway NH-44 during late-night hours. Independent witnesse... | t            | 2026-02-01
+(24 rows)
+
+SELECT risk_rule_id,
+       rule_version,
+       (definition->>'high_similarity_threshold')::numeric   AS high_threshold,
+       (definition->>'medium_similarity_threshold')::numeric AS medium_threshold,
+       is_active,
+       created_at::date
+FROM   risk_rule
+ORDER  BY risk_rule_id;
+ risk_rule_id | rule_version | high_threshold | medium_threshold | is_active | created_at 
+--------------+--------------+----------------+------------------+-----------+------------
+            1 | v1.0         |           0.85 |             0.65 | f         | 2026-01-20
+            2 | v1.1         |           0.80 |             0.60 | f         | 2026-03-01
+            3 | v2.0-minilm  |           0.65 |             0.55 | t         | 2026-11-09
+(3 rows)
+
+SELECT notification_id,
+       notification_type,
+       message,
+       created_at,
+       read_at,
+       dismissed_at
+FROM   notification
+WHERE  user_id = 'a3000000-0000-0000-0000-000000000001'
+ORDER  BY read_at NULLS FIRST, created_at DESC;
+           notification_id            | notification_type |                                             message                                             |       created_at       |        read_at         | dismissed_at 
+--------------------------------------+-------------------+-------------------------------------------------------------------------------------------------+------------------------+------------------------+--------------
+ 91000000-0000-0000-0000-000000000001 | CLAIM_APPROVED    | Your claim POL-2026-0001 / Claim 1 has been approved. Settlement processing will begin shortly. | 2026-06-01 10:00:00+00 | 2026-06-02 03:30:00+00 | 
+(1 row)
+
+SELECT claim_id,
+       claimed_amount,
+       ts_headline('english', description,
+                   plainto_tsquery('english', 'collision highway'),
+                   'MaxWords=15, MinWords=5') AS matched_excerpt,
+       ts_rank(to_tsvector('english', description),
+               plainto_tsquery('english', 'collision highway')) AS rank
+FROM   claim
+WHERE  to_tsvector('english', description)
+       @@ plainto_tsquery('english', 'collision highway')
+ORDER  BY rank DESC;
+               claim_id               | claimed_amount |                matched_excerpt                |    rank    
+--------------------------------------+----------------+-----------------------------------------------+------------
+ d1000000-0000-0000-0000-000000000001 |       87500.00 | <b>collision</b> on the <b>highway</b> during | 0.09735848
+(1 row)
+
+SELECT c.claim_id,
+       u.full_name           AS claimant,
+       c.claimed_amount,
+       c.claim_status,
+       a.attempt_no          AS last_attempt,
+       a.status              AS screening_status,
+       a.outcome,
+       a.risk_indicator,
+       a.risk_rule_version
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+LEFT JOIN LATERAL (
+    SELECT attempt_no, status, outcome, risk_indicator, risk_rule_version
+    FROM   screening_assessment
+    WHERE  claim_id = c.claim_id
+    ORDER  BY attempt_no DESC
+    LIMIT  1
+) a ON true
+ORDER  BY c.submitted_at DESC;
+               claim_id               |    claimant     | claimed_amount | claim_status  | last_attempt | screening_status |    outcome    | risk_indicator | risk_rule_version 
+--------------------------------------+-----------------+----------------+---------------+--------------+------------------+---------------+----------------+-------------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      |        5500.00 | SUBMITTED     |              |                  |               |                | 
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar |       12000.00 | DECIDED       |            1 | COMPLETED        | NO_MATCH      | LOW            | v1.1
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       |      215000.00 | SUBMITTED     |            1 | FAILED           |               |                | 
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     |       45000.00 | DECIDED       |            1 | COMPLETED        | MATCHES_FOUND | MEDIUM         | v1.1
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   |      125000.00 | AWAITING_INFO |            1 | COMPLETED        | MATCHES_FOUND | HIGH           | v1.1
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      |       87500.00 | DECIDED       |            1 | COMPLETED        | MATCHES_FOUND | HIGH           | v1.1
+(6 rows)
+
+SELECT m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       r.title                               AS matched_case_title,
+       left(r.description, 80) || '...'     AS case_description_excerpt,
+       c.claim_id,
+       claimant.full_name                   AS claimant
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id    = m.reference_case_id
+JOIN   screening_assessment a ON a.assessment_id = m.assessment_id
+JOIN   claim c                ON c.claim_id   = a.claim_id
+JOIN   app_user claimant      ON claimant.user_id = c.claimant_id
+ORDER  BY m.assessment_id, m.match_rank;
+            assessment_id             | match_rank | similarity |                 matched_case_title                  |                              case_description_excerpt                               |               claim_id               |   claimant    
+--------------------------------------+------------+------------+-----------------------------------------------------+-------------------------------------------------------------------------------------+--------------------------------------+---------------
+ e1000000-0000-0000-0000-000000000001 |          1 |     0.9121 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000001 |          2 |     0.7834 | Slip and Fall — Coordinated Claimant Network        | Multiple unrelated claimants submitted slip-and-fall claims against the same com... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000001 |          3 |     0.6215 | Water Damage — Repeated Claims Same Address         | Multiple water-damage claims filed within 12 months for the same residential add... | d1000000-0000-0000-0000-000000000001 | Ananya Rao
+ e1000000-0000-0000-0000-000000000002 |          1 |     0.7456 | Water Damage — Repeated Claims Same Address         | Multiple water-damage claims filed within 12 months for the same residential add... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000002 |          2 |     0.6102 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000002 |          3 |     0.5301 | Medical Procedure Not Performed — Phantom Treatment | Claim submitted for surgical procedure. Hospital records did not confirm the pro... | d1000000-0000-0000-0000-000000000002 | Suresh Babu
+ e1000000-0000-0000-0000-000000000003 |          1 |     0.8822 | Medical Procedure Not Performed — Phantom Treatment | Claim submitted for surgical procedure. Hospital records did not confirm the pro... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+ e1000000-0000-0000-0000-000000000003 |          2 |     0.7490 | Theft Claim — Item Never Owned                      | High-value electronics theft claimed. Purchase receipts provided were forged. Fo... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+ e1000000-0000-0000-0000-000000000003 |          3 |     0.6033 | Staged Vehicle Collision — Highway NH-44            | Claimant reported a head-on collision on highway NH-44 during late-night hours. ... | d1000000-0000-0000-0000-000000000003 | Kavitha Reddy
+(9 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       adj.full_name    AS adjuster,
+       rv.review_action,
+       rv.notes,
+       rv.reviewed_at
+FROM   review rv
+JOIN   claim c     ON c.claim_id    = rv.claim_id
+JOIN   policy p    ON p.policy_id   = c.policy_id
+JOIN   app_user adj ON adj.user_id  = rv.reviewer_id
+ORDER  BY c.claim_id, rv.reviewed_at;
+               claim_id               | policy_number |    adjuster    | review_action  |                                                                                  notes                                                                                  |      reviewed_at       
+--------------------------------------+---------------+----------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Arjun Sharma   | APPROVED       | Evidence reviewed. Similarity matches flagged concern but FIR, repair records and independent assessment confirm legitimate collision. Approved at adjuster discretion. | 2026-06-01 09:30:00+00
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Meera Pillai   | INFO_REQUESTED | Pattern matches two water-damage cases at same address. Require proof of plumber visit, independent structural survey, and previous claim history.                      | 2026-06-10 08:30:00+00
+ d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Meera Pillai   | REJECTED       | Survey confirms structural pipe failure but repeated claims at same address within 12 months exceeds acceptable risk threshold under policy terms. Claim rejected.      | 2026-06-20 10:30:00+00
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Vikram Iyer    | INFO_REQUESTED | High similarity to phantom treatment case. Requesting original hospital records, surgeon licence number, and operative notes directly from hospital.                    | 2026-06-25 05:30:00+00
+ d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Sneha Kulkarni | APPROVED       | FIR verified. No pattern match. Claimed amount within policy limit. Approved.                                                                                           | 2026-07-15 04:30:00+00
+(5 rows)
+
+SELECT cd.decision_id,
+       cd.decision_status,
+       cd.decided_at::date,
+       c.claim_id,
+       p.policy_number,
+       holder.full_name   AS policyholder,
+       c.claimed_amount,
+       adj.full_name      AS deciding_adjuster
+FROM   claim_decision cd
+JOIN   review rv       ON rv.review_id  = cd.review_id
+JOIN   claim c         ON c.claim_id    = cd.claim_id
+JOIN   policy p        ON p.policy_id   = c.policy_id
+JOIN   app_user holder ON holder.user_id = c.claimant_id
+JOIN   app_user adj    ON adj.user_id    = rv.reviewer_id
+ORDER  BY cd.decided_at DESC;
+             decision_id              | decision_status | decided_at |               claim_id               | policy_number |  policyholder   | claimed_amount | deciding_adjuster 
+--------------------------------------+-----------------+------------+--------------------------------------+---------------+-----------------+----------------+-------------------
+ 71000000-0000-0000-0000-000000000003 | APPROVED        | 2026-07-15 | d1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar |       12000.00 | Sneha Kulkarni
+ 71000000-0000-0000-0000-000000000002 | REJECTED        | 2026-06-20 | d1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     |       45000.00 | Meera Pillai
+ 71000000-0000-0000-0000-000000000001 | APPROVED        | 2026-06-01 | d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      |       87500.00 | Arjun Sharma
+(3 rows)
+
+SELECT ir.response_id,
+       p.policy_number,
+       holder.full_name   AS responder,
+       adj.full_name      AS requesting_adjuster,
+       rv.review_action,
+       left(rv.notes, 60) || '...'  AS request_summary,
+       left(ir.body, 80) || '...'   AS response_excerpt,
+       ir.responded_at
+FROM   information_response ir
+JOIN   review rv        ON rv.review_id   = ir.review_id
+JOIN   claim c          ON c.claim_id     = ir.claim_id
+JOIN   policy p         ON p.policy_id    = c.policy_id
+JOIN   app_user holder  ON holder.user_id = ir.responder_id
+JOIN   app_user adj     ON adj.user_id    = rv.reviewer_id;
+             response_id              | policy_number |  responder  | requesting_adjuster | review_action  |                         request_summary                         |                                  response_excerpt                                   |      responded_at      
+--------------------------------------+---------------+-------------+---------------------+----------------+-----------------------------------------------------------------+-------------------------------------------------------------------------------------+------------------------
+ 81000000-0000-0000-0000-000000000001 | POL-2026-0002 | Suresh Babu | Meera Pillai        | INFO_REQUESTED | Pattern matches two water-damage cases at same address. Requ... | Attached: (1) Plumber visit receipt dated 3-Jun-2026, (2) Building society struc... | 2026-06-13 04:30:00+00
+(1 row)
+
+SELECT al.audit_id,
+       al.occurred_at,
+       al.actor_type,
+       COALESCE(actor.full_name, 'SYSTEM') AS actor,
+       al.action,
+       c.claim_id                          AS target_claim,
+       COALESCE(target_user.full_name, '') AS target_user
+FROM   audit_log al
+LEFT JOIN app_user actor       ON actor.user_id       = al.actor_id
+LEFT JOIN claim c              ON c.claim_id          = al.claim_id
+LEFT JOIN app_user target_user ON target_user.user_id = al.target_user_id
+ORDER  BY al.occurred_at DESC
+LIMIT  30;
+ audit_id |          occurred_at          | actor_type |     actor      |           action           |             target_claim             | target_user 
+----------+-------------------------------+------------+----------------+----------------------------+--------------------------------------+-------------
+       27 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       44 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       43 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       42 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       41 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       40 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       39 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       38 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       37 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       36 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       35 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       34 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       33 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       32 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       31 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       30 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       29 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       28 | 2026-11-09 07:46:14.181273+00 | USER       | Priya Nair     | REFERENCE_CASE_ADDED       |                                      | 
+       26 | 2026-11-09 07:46:10.487346+00 | USER       | Sneha Kulkarni | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000005 | 
+       25 | 2026-11-09 07:46:10.485622+00 | USER       | Sneha Kulkarni | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000005 | 
+       24 | 2026-11-09 07:46:10.482106+00 | USER       | Vikram Iyer    | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000003 | 
+       23 | 2026-11-09 07:46:10.479998+00 | USER       | Meera Pillai   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000002 | 
+       22 | 2026-11-09 07:46:10.478071+00 | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       21 | 2026-11-09 07:46:10.473713+00 | USER       | Suresh Babu    | INFORMATION_RESPONSE_ADDED | d1000000-0000-0000-0000-000000000002 | 
+       20 | 2026-11-09 07:46:10.4715+00   | USER       | Meera Pillai   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000002 | 
+       19 | 2026-11-09 07:46:10.466477+00 | USER       | Arjun Sharma   | DECISION_RECORDED          | d1000000-0000-0000-0000-000000000001 | 
+       18 | 2026-11-09 07:46:10.462484+00 | USER       | Arjun Sharma   | REVIEW_RECORDED            | d1000000-0000-0000-0000-000000000001 | 
+       17 | 2026-11-09 07:46:10.452494+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000005 | 
+       16 | 2026-11-09 07:46:10.449864+00 | SYSTEM     | SYSTEM         | SCREENING_FAILED           | d1000000-0000-0000-0000-000000000004 | 
+       15 | 2026-11-09 07:46:10.444272+00 | SYSTEM     | SYSTEM         | SCREENING_COMPLETED        | d1000000-0000-0000-0000-000000000003 | 
+(30 rows)
+
+SELECT claim_status,
+       screening_status,
+       count(*)              AS claim_count,
+       sum(claimed_amount)   AS total_claimed,
+       avg(claimed_amount)   AS avg_claimed
+FROM   claim
+GROUP  BY claim_status, screening_status
+ORDER  BY claim_count DESC;
+ claim_status  | screening_status | claim_count | total_claimed |      avg_claimed      
+---------------+------------------+-------------+---------------+-----------------------
+ DECIDED       | COMPLETED        |           3 |     144500.00 |    48166.666666666667
+ SUBMITTED     | FAILED           |           1 |     215000.00 |   215000.000000000000
+ SUBMITTED     | PENDING          |           1 |       5500.00 | 5500.0000000000000000
+ AWAITING_INFO | COMPLETED        |           1 |     125000.00 |   125000.000000000000
+(4 rows)
+
+SELECT adj.full_name                AS adjuster,
+       count(*)                     AS total_reviews,
+       count(*) FILTER (WHERE rv.review_action = 'APPROVED')       AS approvals,
+       count(*) FILTER (WHERE rv.review_action = 'REJECTED')       AS rejections,
+       count(*) FILTER (WHERE rv.review_action = 'INFO_REQUESTED') AS info_requests
+FROM   review rv
+JOIN   app_user adj ON adj.user_id = rv.reviewer_id
+GROUP  BY adj.full_name
+ORDER  BY total_reviews DESC;
+    adjuster    | total_reviews | approvals | rejections | info_requests 
+----------------+---------------+-----------+------------+---------------
+ Meera Pillai   |             2 |         0 |          1 |             1
+ Vikram Iyer    |             1 |         0 |          0 |             1
+ Arjun Sharma   |             1 |         1 |          0 |             0
+ Sneha Kulkarni |             1 |         1 |          0 |             0
+(4 rows)
+
+SELECT r.title,
+       count(m.match_id)                        AS times_matched,
+       round(avg(m.similarity_score)::numeric, 4) AS avg_similarity,
+       round(max(m.similarity_score)::numeric, 4) AS max_similarity
+FROM   reference_fraud_case r
+JOIN   screening_match m ON m.reference_case_id = r.case_id
+GROUP  BY r.case_id, r.title
+ORDER  BY times_matched DESC, avg_similarity DESC;
+                        title                        | times_matched | avg_similarity | max_similarity 
+-----------------------------------------------------+---------------+----------------+----------------
+ Staged Vehicle Collision — Highway NH-44            |             3 |         0.7085 |         0.9121
+ Medical Procedure Not Performed — Phantom Treatment |             2 |         0.7062 |         0.8822
+ Water Damage — Repeated Claims Same Address         |             2 |         0.6836 |         0.7456
+ Slip and Fall — Coordinated Claimant Network        |             1 |         0.7834 |         0.7834
+ Theft Claim — Item Never Owned                      |             1 |         0.7490 |         0.7490
+(5 rows)
+
+SELECT risk_indicator,
+       count(*)                AS assessment_count,
+       round(100.0 * count(*) / sum(count(*)) OVER (), 1) AS pct
+FROM   screening_assessment
+WHERE  status = 'COMPLETED'
+GROUP  BY risk_indicator
+ORDER  BY assessment_count DESC;
+ risk_indicator | assessment_count | pct  
+----------------+------------------+------
+ HIGH           |                2 | 50.0
+ LOW            |                1 | 25.0
+ MEDIUM         |                1 | 25.0
+(3 rows)
+
+SELECT u.full_name                        AS policyholder,
+       count(c.claim_id)                  AS total_claims,
+       sum(c.claimed_amount)              AS total_amount_claimed,
+       count(cd.decision_id) FILTER (WHERE cd.decision_status = 'APPROVED') AS approved,
+       count(cd.decision_id) FILTER (WHERE cd.decision_status = 'REJECTED') AS rejected
+FROM   app_user u
+JOIN   claim c        ON c.claimant_id = u.user_id
+LEFT JOIN claim_decision cd ON cd.claim_id = c.claim_id
+GROUP  BY u.user_id, u.full_name
+HAVING count(c.claim_id) > 0
+ORDER  BY total_claims DESC;
+  policyholder   | total_claims | total_amount_claimed | approved | rejected 
+-----------------+--------------+----------------------+----------+----------
+ Ananya Rao      |            2 |             93000.00 |        1 |        0
+ Mohan Das       |            1 |            215000.00 |        0 |        0
+ Kavitha Reddy   |            1 |            125000.00 |        0 |        0
+ Lakshmi Nambiar |            1 |             12000.00 |        1 |        0
+ Suresh Babu     |            1 |             45000.00 |        0 |        1
+(5 rows)
+
+SELECT date_trunc('month', submitted_at)::date AS month,
+       count(*)                                AS claims_submitted,
+       sum(claimed_amount)                     AS total_claimed,
+       count(*) FILTER (WHERE review_required) AS high_risk_flagged
+FROM   claim
+GROUP  BY date_trunc('month', submitted_at)
+ORDER  BY month;
+   month    | claims_submitted | total_claimed | high_risk_flagged 
+------------+------------------+---------------+-------------------
+ 2026-05-01 |                2 |     212500.00 |                 2
+ 2026-06-01 |                1 |      45000.00 |                 0
+ 2026-07-01 |                2 |     227000.00 |                 0
+ 2026-08-01 |                1 |       5500.00 |                 0
+(4 rows)
+
+SELECT c.claim_id,
+       u.full_name  AS claimant,
+       c.submitted_at
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+WHERE  NOT EXISTS (
+    SELECT 1
+    FROM   screening_assessment a
+    WHERE  a.claim_id = c.claim_id
+)
+ORDER  BY c.submitted_at;
+               claim_id               |  claimant  |      submitted_at      
+--------------------------------------+------------+------------------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao | 2026-08-02 04:30:00+00
+(1 row)
+
+SELECT case_id,
+       title,
+       created_at::date
+FROM   reference_fraud_case
+WHERE  is_active
+  AND  case_id NOT IN (
+      SELECT DISTINCT reference_case_id FROM screening_match
+  )
+ORDER  BY created_at;
+               case_id                |                            title                             | created_at 
+--------------------------------------+--------------------------------------------------------------+------------
+ c1000000-0000-0000-0000-000000000004 | Fire Damage — Arson Investigation Confirmed                  | 2026-02-08
+ c2000000-0000-0000-0000-000000000001 | Staged rear-end collision with a pre-arranged lead vehicle   | 2026-11-09
+ c2000000-0000-0000-0000-000000000002 | Repair invoice inflated by the workshop after approval       | 2026-11-09
+ c2000000-0000-0000-0000-000000000003 | Old dents and rust presented as fresh accident damage        | 2026-11-09
+ c2000000-0000-0000-0000-000000000004 | Same incident claimed twice under two policies               | 2026-11-09
+ c2000000-0000-0000-0000-000000000005 | Phantom passengers added to a minor collision                | 2026-11-09
+ c2000000-0000-0000-0000-000000000006 | Vehicle reported stolen after being sold to a scrap dealer   | 2026-11-09
+ c2000000-0000-0000-0000-000000000007 | Shop fire set deliberately to clear unsold stock and debt    | 2026-11-09
+ c2000000-0000-0000-0000-000000000008 | Hospital admission and surgery that never took place         | 2026-11-09
+ c2000000-0000-0000-0000-000000000009 | Whiplash injury exaggerated for months of compensation       | 2026-11-09
+ c2000000-0000-0000-0000-000000000010 | Swoop-and-squat crash caused by two cooperating cars         | 2026-11-09
+ c2000000-0000-0000-0000-000000000011 | Paper accident: collision invented with borrowed photos      | 2026-11-09
+ c2000000-0000-0000-0000-000000000012 | Burglary staged to claim jewellery that was never owned      | 2026-11-09
+ c2000000-0000-0000-0000-000000000013 | Slow pipe leak reported as a sudden burst                    | 2026-11-09
+ c2000000-0000-0000-0000-000000000014 | Policy bought after the loss had already happened            | 2026-11-09
+ c2000000-0000-0000-0000-000000000015 | Car abandoned and torched to escape loan payments            | 2026-11-09
+ c2000000-0000-0000-0000-000000000016 | Forged pharmacy and diagnostic bills added to a genuine stay | 2026-11-09
+ c2000000-0000-0000-0000-000000000017 | Same phone reported lost to several insurers                 | 2026-11-09
+ c2000000-0000-0000-0000-000000000018 | Two-wheeler fall staged to claim hospital and repair costs   | 2026-11-09
+(19 rows)
+
+SELECT c.claim_id,
+       u.full_name  AS claimant,
+       c.submitted_at,
+       latest.failure_reason
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+JOIN   (
+    SELECT DISTINCT ON (claim_id)
+           claim_id, status, failure_reason
+    FROM   screening_assessment
+    ORDER  BY claim_id, attempt_no DESC
+) latest ON latest.claim_id = c.claim_id AND latest.status = 'FAILED'
+WHERE  c.screening_status = 'FAILED';
+               claim_id               | claimant  |      submitted_at      |                              failure_reason                              
+--------------------------------------+-----------+------------------------+--------------------------------------------------------------------------
+ d1000000-0000-0000-0000-000000000004 | Mohan Das | 2026-07-02 02:30:00+00 | Embedding service unavailable: connection timeout after 30 s (attempt 1)
+(1 row)
+
+SELECT adj.full_name,
+       COUNT(*) AS approvals
+FROM   review rv
+JOIN   app_user adj ON adj.user_id = rv.reviewer_id
+WHERE  rv.review_action = 'APPROVED'
+GROUP  BY adj.user_id, adj.full_name
+HAVING COUNT(*) > (
+    SELECT AVG(adj_count)
+    FROM (
+        SELECT COUNT(*) AS adj_count
+        FROM   review
+        WHERE  review_action = 'APPROVED'
+        GROUP  BY reviewer_id
+    ) sub
+);
+ full_name | approvals 
+-----------+-----------
+(0 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       c.claim_status,
+       c.claimed_amount
+FROM   claim c
+JOIN   policy p ON p.policy_id = c.policy_id
+WHERE  p.policy_id IN (
+    SELECT policy_id
+    FROM   claim
+    GROUP  BY policy_id
+    HAVING count(*) >= 2
+)
+ORDER  BY p.policy_number, c.submitted_at;
+               claim_id               | policy_number | claim_status | claimed_amount 
+--------------------------------------+---------------+--------------+----------------
+ d1000000-0000-0000-0000-000000000001 | POL-2026-0001 | DECIDED      |       87500.00
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | SUBMITTED    |        5500.00
+(2 rows)
+
+SELECT u.full_name,
+       u.email,
+       (SELECT count(*) FROM notification n
+        WHERE  n.user_id = u.user_id AND n.read_at IS NULL) AS unread_count
+FROM   app_user u
+WHERE  EXISTS (
+    SELECT 1 FROM notification n
+    WHERE  n.user_id = u.user_id AND n.read_at IS NULL
+)
+ORDER  BY unread_count DESC;
+    full_name    |           email            | unread_count 
+-----------------+----------------------------+--------------
+ Kavitha Reddy   | holder.kavitha@example.com |            1
+ Lakshmi Nambiar | holder.lakshmi@example.com |            1
+(2 rows)
+
+SELECT r.title                                   AS reference_case,
+       m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4)     AS similarity,
+       round((SELECT avg(m2.similarity_score)
+              FROM   screening_match m2
+              WHERE  m2.reference_case_id = m.reference_case_id)::numeric, 4)
+                                                 AS case_avg_similarity
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+WHERE  m.similarity_score > (
+           SELECT avg(m2.similarity_score)
+           FROM   screening_match m2
+           WHERE  m2.reference_case_id = m.reference_case_id   -- correlation
+       )
+ORDER  BY r.title, similarity DESC;
+                   reference_case                    |            assessment_id             | match_rank | similarity | case_avg_similarity 
+-----------------------------------------------------+--------------------------------------+------------+------------+---------------------
+ Medical Procedure Not Performed — Phantom Treatment | e1000000-0000-0000-0000-000000000003 |          1 |     0.8822 |              0.7062
+ Staged Vehicle Collision — Highway NH-44            | e1000000-0000-0000-0000-000000000001 |          1 |     0.9121 |              0.7085
+ Water Damage — Repeated Claims Same Address         | e1000000-0000-0000-0000-000000000002 |          1 |     0.7456 |              0.6836
+(3 rows)
+
+WITH latest_assessment AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id,
+           assessment_id,
+           attempt_no,
+           status      AS screening_status,
+           outcome,
+           risk_indicator
+    FROM   screening_assessment
+    ORDER  BY claim_id, attempt_no DESC
+),
+latest_review AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id,
+           review_action AS last_review_action,
+           reviewed_at   AS last_reviewed_at
+    FROM   review
+    ORDER  BY claim_id, reviewed_at DESC
+),
+decision_info AS (
+    SELECT claim_id, decision_status, decided_at
+    FROM   claim_decision
+)
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.claim_status,
+       la.risk_indicator,
+       lr.last_review_action,
+       di.decision_status,
+       di.decided_at::date
+FROM   claim c
+JOIN   app_user u    ON u.user_id    = c.claimant_id
+LEFT JOIN latest_assessment la ON la.claim_id = c.claim_id
+LEFT JOIN latest_review     lr ON lr.claim_id = c.claim_id
+LEFT JOIN decision_info      di ON di.claim_id = c.claim_id
+ORDER  BY c.submitted_at DESC;
+               claim_id               |    claimant     | claim_status  | risk_indicator | last_review_action | decision_status | decided_at 
+--------------------------------------+-----------------+---------------+----------------+--------------------+-----------------+------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | SUBMITTED     |                |                    |                 | 
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | DECIDED       | LOW            | APPROVED           | APPROVED        | 2026-07-15
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | SUBMITTED     |                |                    |                 | 
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | DECIDED       | MEDIUM         | REJECTED           | REJECTED        | 2026-06-20
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | AWAITING_INFO | HIGH           | INFO_REQUESTED     |                 | 
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | DECIDED       | HIGH           | APPROVED           | APPROVED        | 2026-06-01
+(6 rows)
+
+WITH pair_counts AS (
+    SELECT m1.reference_case_id AS case_a,
+           m2.reference_case_id AS case_b,
+           count(*)              AS co_occurrence_count
+    FROM   screening_match m1
+    JOIN   screening_match m2
+        ON  m1.assessment_id = m2.assessment_id
+        AND m1.reference_case_id < m2.reference_case_id
+    GROUP  BY m1.reference_case_id, m2.reference_case_id
+)
+SELECT r1.title AS case_a_title,
+       r2.title AS case_b_title,
+       pc.co_occurrence_count
+FROM   pair_counts pc
+JOIN   reference_fraud_case r1 ON r1.case_id = pc.case_a
+JOIN   reference_fraud_case r2 ON r2.case_id = pc.case_b
+ORDER  BY co_occurrence_count DESC;
+                    case_a_title                     |                    case_b_title                     | co_occurrence_count 
+-----------------------------------------------------+-----------------------------------------------------+---------------------
+ Staged Vehicle Collision — Highway NH-44            | Medical Procedure Not Performed — Phantom Treatment |                   2
+ Staged Vehicle Collision — Highway NH-44            | Water Damage — Repeated Claims Same Address         |                   2
+ Water Damage — Repeated Claims Same Address         | Slip and Fall — Coordinated Claimant Network        |                   1
+ Medical Procedure Not Performed — Phantom Treatment | Theft Claim — Item Never Owned                      |                   1
+ Staged Vehicle Collision — Highway NH-44            | Theft Claim — Item Never Owned                      |                   1
+ Staged Vehicle Collision — Highway NH-44            | Slip and Fall — Coordinated Claimant Network        |                   1
+ Water Damage — Repeated Claims Same Address         | Medical Procedure Not Performed — Phantom Treatment |                   1
+(7 rows)
+
+WITH high_risk_claims AS (
+    SELECT c.claim_id,
+           c.claimed_amount,
+           c.submitted_at,
+           floor(extract(epoch FROM (now() - c.submitted_at)) / 3600)::int AS age_hours
+    FROM   claim c
+    WHERE  c.review_required AND c.claim_status <> 'DECIDED'
+),
+last_review AS (
+    SELECT DISTINCT ON (claim_id)
+           claim_id, review_action, reviewed_at
+    FROM   review
+    ORDER  BY claim_id, reviewed_at DESC
+)
+SELECT hr.claim_id,
+       hr.claimed_amount,
+       hr.age_hours,
+       COALESCE(lr.review_action, 'NOT_STARTED') AS current_review_state,
+       lr.reviewed_at
+FROM   high_risk_claims hr
+LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
+ORDER  BY hr.age_hours DESC;
+               claim_id               | claimed_amount | age_hours | current_review_state |      reviewed_at       
+--------------------------------------+----------------+-----------+----------------------+------------------------
+ d1000000-0000-0000-0000-000000000003 |      125000.00 |      4107 | INFO_REQUESTED       | 2026-06-25 05:30:00+00
+(1 row)
+
+WITH RECURSIVE months (month_start, last_month) AS (
+    -- anchor member: the first month that has a claim
+    SELECT date_trunc('month', min(submitted_at))::date,
+           date_trunc('month', max(submitted_at))::date
+    FROM   claim
+    UNION ALL
+    -- recursive member: next month, until the last month with a claim
+    SELECT (month_start + interval '1 month')::date,
+           last_month
+    FROM   months
+    WHERE  month_start < last_month
+)
+SELECT m.month_start                                  AS month,
+       count(c.claim_id)                              AS claims_submitted,
+       coalesce(sum(c.claimed_amount), 0)             AS total_claimed,
+       count(c.claim_id) FILTER (WHERE c.review_required) AS high_risk_flagged
+FROM   months m
+LEFT JOIN claim c
+       ON date_trunc('month', c.submitted_at)::date = m.month_start
+GROUP  BY m.month_start
+ORDER  BY m.month_start;
+   month    | claims_submitted | total_claimed | high_risk_flagged 
+------------+------------------+---------------+-------------------
+ 2026-05-01 |                2 |     212500.00 |                 2
+ 2026-06-01 |                1 |      45000.00 |                 0
+ 2026-07-01 |                2 |     227000.00 |                 0
+ 2026-08-01 |                1 |       5500.00 |                 0
+(4 rows)
+
+WITH claim_events AS (
+    SELECT al.occurred_at,
+           al.audit_id,
+           al.action,
+           al.actor_type,
+           COALESCE(actor.full_name, 'SYSTEM') AS actor,
+           al.details
+    FROM   audit_log al
+    LEFT JOIN app_user actor ON actor.user_id = al.actor_id
+    WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000001'
+)
+SELECT row_number() OVER (ORDER BY occurred_at, audit_id) AS step,
+       occurred_at,
+       action,
+       actor_type,
+       actor,
+       details
+FROM   claim_events
+ORDER  BY step;
+ step |          occurred_at          |       action        | actor_type |    actor     |                                                       details                                                        
+------+-------------------------------+---------------------+------------+--------------+----------------------------------------------------------------------------------------------------------------------
+    1 | 2026-11-09 07:46:10.419715+00 | CLAIM_SUBMITTED     | USER       | Ananya Rao   | {"source": "database_trigger", "claim_status": "SUBMITTED"}
+    2 | 2026-11-09 07:46:10.432882+00 | SCREENING_COMPLETED | SYSTEM     | SYSTEM       | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 1}
+    3 | 2026-11-09 07:46:10.462484+00 | REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "f1000000-0000-0000-0000-000000000001", "review_action": "APPROVED"}
+    4 | 2026-11-09 07:46:10.466477+00 | DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "71000000-0000-0000-0000-000000000001", "decision_status": "APPROVED"}
+(4 rows)
+
+WITH policy_stats AS (
+    SELECT p.policy_id,
+           p.policy_number,
+           u.full_name                   AS holder,
+           count(c.claim_id)             AS claims_filed,
+           coalesce(sum(c.claimed_amount), 0) AS total_exposure,
+           count(cd.decision_id)         AS decisions_made
+    FROM   policy p
+    JOIN   app_user u ON u.user_id = p.holder_id
+    LEFT JOIN claim c          ON c.policy_id  = p.policy_id
+    LEFT JOIN claim_decision cd ON cd.claim_id = c.claim_id
+    GROUP  BY p.policy_id, p.policy_number, u.full_name
+)
+SELECT *,
+       CASE WHEN claims_filed = 0 THEN 'NO_CLAIMS'
+            WHEN decisions_made = claims_filed THEN 'FULLY_DECIDED'
+            ELSE 'IN_PROGRESS'
+       END AS status_label
+FROM   policy_stats
+ORDER  BY total_exposure DESC;
+              policy_id               | policy_number |     holder      | claims_filed | total_exposure | decisions_made | status_label  
+--------------------------------------+---------------+-----------------+--------------+----------------+----------------+---------------
+ b1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das       |            1 |      215000.00 |              0 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy   |            1 |      125000.00 |              0 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000001 | POL-2026-0001 | Ananya Rao      |            2 |       93000.00 |              1 | IN_PROGRESS
+ b1000000-0000-0000-0000-000000000002 | POL-2026-0002 | Suresh Babu     |            1 |       45000.00 |              1 | FULLY_DECIDED
+ b1000000-0000-0000-0000-000000000005 | POL-2026-0005 | Lakshmi Nambiar |            1 |       12000.00 |              1 | FULLY_DECIDED
+ b1000000-0000-0000-0000-000000000006 | POL-2025-0099 | Ananya Rao      |            0 |              0 |              0 | NO_CLAIMS
+(6 rows)
+
+SELECT u.full_name  AS claimant,
+       c.claim_id,
+       c.claimed_amount,
+       RANK() OVER (PARTITION BY c.claimant_id ORDER BY c.claimed_amount DESC) AS amount_rank
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY u.full_name, amount_rank;
+    claimant     |               claim_id               | claimed_amount | amount_rank 
+-----------------+--------------------------------------+----------------+-------------
+ Ananya Rao      | d1000000-0000-0000-0000-000000000001 |       87500.00 |           1
+ Ananya Rao      | d1000000-0000-0000-0000-000000000006 |        5500.00 |           2
+ Kavitha Reddy   | d1000000-0000-0000-0000-000000000003 |      125000.00 |           1
+ Lakshmi Nambiar | d1000000-0000-0000-0000-000000000005 |       12000.00 |           1
+ Mohan Das       | d1000000-0000-0000-0000-000000000004 |      215000.00 |           1
+ Suresh Babu     | d1000000-0000-0000-0000-000000000002 |       45000.00 |           1
+(6 rows)
+
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.submitted_at::date,
+       c.claimed_amount,
+       SUM(c.claimed_amount) OVER (ORDER BY c.submitted_at
+                                   ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+                           AS running_total
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.submitted_at;
+               claim_id               |    claimant     | submitted_at | claimed_amount | running_total 
+--------------------------------------+-----------------+--------------+----------------+---------------
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | 2026-05-15   |       87500.00 |      87500.00
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | 2026-05-22   |      125000.00 |     212500.00
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | 2026-06-03   |       45000.00 |     257500.00
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | 2026-07-02   |      215000.00 |     472500.00
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | 2026-07-11   |       12000.00 |     484500.00
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | 2026-08-02   |        5500.00 |     490000.00
+(6 rows)
+
+SELECT a.claim_id,
+       m.match_rank,
+       r.title             AS matched_case,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       CASE WHEN ROW_NUMBER() OVER (PARTITION BY m.assessment_id ORDER BY m.similarity_score DESC) = 1
+            THEN 'TOP MATCH'
+            ELSE ''
+       END AS top_match_flag
+FROM   screening_match m
+JOIN   screening_assessment a ON a.assessment_id = m.assessment_id
+JOIN   reference_fraud_case r ON r.case_id       = m.reference_case_id
+ORDER  BY a.claim_id, m.match_rank;
+               claim_id               | match_rank |                    matched_case                     | similarity | top_match_flag 
+--------------------------------------+------------+-----------------------------------------------------+------------+----------------
+ d1000000-0000-0000-0000-000000000001 |          1 | Staged Vehicle Collision — Highway NH-44            |     0.9121 | TOP MATCH
+ d1000000-0000-0000-0000-000000000001 |          2 | Slip and Fall — Coordinated Claimant Network        |     0.7834 | 
+ d1000000-0000-0000-0000-000000000001 |          3 | Water Damage — Repeated Claims Same Address         |     0.6215 | 
+ d1000000-0000-0000-0000-000000000002 |          1 | Water Damage — Repeated Claims Same Address         |     0.7456 | TOP MATCH
+ d1000000-0000-0000-0000-000000000002 |          2 | Staged Vehicle Collision — Highway NH-44            |     0.6102 | 
+ d1000000-0000-0000-0000-000000000002 |          3 | Medical Procedure Not Performed — Phantom Treatment |     0.5301 | 
+ d1000000-0000-0000-0000-000000000003 |          1 | Medical Procedure Not Performed — Phantom Treatment |     0.8822 | TOP MATCH
+ d1000000-0000-0000-0000-000000000003 |          2 | Theft Claim — Item Never Owned                      |     0.7490 | 
+ d1000000-0000-0000-0000-000000000003 |          3 | Staged Vehicle Collision — Highway NH-44            |     0.6033 | 
+(9 rows)
+
+SELECT c.claim_id,
+       u.full_name        AS claimant,
+       c.submitted_at::date,
+       c.claimed_amount,
+       LAG (c.claimed_amount) OVER (ORDER BY c.submitted_at) AS prev_claim_amount,
+       LEAD(c.claimed_amount) OVER (ORDER BY c.submitted_at) AS next_claim_amount,
+       c.claimed_amount
+         - LAG(c.claimed_amount, 1, c.claimed_amount) OVER (ORDER BY c.submitted_at)
+                                                            AS delta_from_prev
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.submitted_at;
+               claim_id               |    claimant     | submitted_at | claimed_amount | prev_claim_amount | next_claim_amount | delta_from_prev 
+--------------------------------------+-----------------+--------------+----------------+-------------------+-------------------+-----------------
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      | 2026-05-15   |       87500.00 |                   |         125000.00 |            0.00
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   | 2026-05-22   |      125000.00 |          87500.00 |          45000.00 |        37500.00
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     | 2026-06-03   |       45000.00 |         125000.00 |         215000.00 |       -80000.00
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       | 2026-07-02   |      215000.00 |          45000.00 |          12000.00 |       170000.00
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar | 2026-07-11   |       12000.00 |         215000.00 |           5500.00 |      -203000.00
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      | 2026-08-02   |        5500.00 |          12000.00 |                   |        -6500.00
+(6 rows)
+
+SELECT m.assessment_id,
+       r.title             AS case_matched,
+       round(m.similarity_score::numeric, 4) AS similarity,
+       DENSE_RANK() OVER (ORDER BY m.similarity_score DESC) AS global_rank
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+ORDER  BY global_rank
+LIMIT  10;
+            assessment_id             |                    case_matched                     | similarity | global_rank 
+--------------------------------------+-----------------------------------------------------+------------+-------------
+ e1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44            |     0.9121 |           1
+ e1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment |     0.8822 |           2
+ e1000000-0000-0000-0000-000000000001 | Slip and Fall — Coordinated Claimant Network        |     0.7834 |           3
+ e1000000-0000-0000-0000-000000000003 | Theft Claim — Item Never Owned                      |     0.7490 |           4
+ e1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address         |     0.7456 |           5
+ e1000000-0000-0000-0000-000000000001 | Water Damage — Repeated Claims Same Address         |     0.6215 |           6
+ e1000000-0000-0000-0000-000000000002 | Staged Vehicle Collision — Highway NH-44            |     0.6102 |           7
+ e1000000-0000-0000-0000-000000000003 | Staged Vehicle Collision — Highway NH-44            |     0.6033 |           8
+ e1000000-0000-0000-0000-000000000002 | Medical Procedure Not Performed — Phantom Treatment |     0.5301 |           9
+(9 rows)
+
+SELECT c.claim_id,
+       u.full_name     AS claimant,
+       c.claimed_amount,
+       NTILE(4) OVER (ORDER BY c.claimed_amount) AS amount_quartile
+FROM   claim c
+JOIN   app_user u ON u.user_id = c.claimant_id
+ORDER  BY c.claimed_amount;
+               claim_id               |    claimant     | claimed_amount | amount_quartile 
+--------------------------------------+-----------------+----------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | Ananya Rao      |        5500.00 |               1
+ d1000000-0000-0000-0000-000000000005 | Lakshmi Nambiar |       12000.00 |               1
+ d1000000-0000-0000-0000-000000000002 | Suresh Babu     |       45000.00 |               2
+ d1000000-0000-0000-0000-000000000001 | Ananya Rao      |       87500.00 |               2
+ d1000000-0000-0000-0000-000000000003 | Kavitha Reddy   |      125000.00 |               3
+ d1000000-0000-0000-0000-000000000004 | Mohan Das       |      215000.00 |               4
+(6 rows)
+
+SELECT DISTINCT ON (a.claim_id)
+       a.claim_id,
+       FIRST_VALUE(a.attempt_no)    OVER w AS first_attempt,
+       LAST_VALUE (a.attempt_no)    OVER w AS last_attempt,
+       FIRST_VALUE(a.status)        OVER w AS first_status,
+       LAST_VALUE (a.status)        OVER w AS final_status
+FROM   screening_assessment a
+WINDOW w AS (PARTITION BY a.claim_id ORDER BY a.attempt_no
+             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING);
+               claim_id               | first_attempt | last_attempt | first_status | final_status 
+--------------------------------------+---------------+--------------+--------------+--------------
+ d1000000-0000-0000-0000-000000000001 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000002 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000003 |             1 |            1 | COMPLETED    | COMPLETED
+ d1000000-0000-0000-0000-000000000004 |             1 |            1 | FAILED       | FAILED
+ d1000000-0000-0000-0000-000000000005 |             1 |            1 | COMPLETED    | COMPLETED
+(5 rows)
+
+SELECT
+    'CLAIM'             AS section,
+    c.claim_id::text    AS identifier,
+    u.full_name         AS party,
+    c.claimed_amount::text AS amount,
+    c.claim_status      AS status,
+    NULL                AS detail
+FROM   claim c JOIN app_user u ON u.user_id = c.claimant_id
+WHERE  c.claim_id = 'd1000000-0000-0000-0000-000000000001'
+UNION ALL
+SELECT
+    'SCREENING'                     AS section,
+    a.assessment_id::text           AS identifier,
+    a.risk_indicator                AS party,
+    a.risk_rule_version             AS amount,
+    a.status                        AS status,
+    a.similarity_metric             AS detail
+FROM   screening_assessment a
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000001'
+ORDER  BY section;
+  section  |              identifier              |   party    |  amount  |  status   |      detail       
+-----------+--------------------------------------+------------+----------+-----------+-------------------
+ CLAIM     | d1000000-0000-0000-0000-000000000001 | Ananya Rao | 87500.00 | DECIDED   | 
+ SCREENING | e1000000-0000-0000-0000-000000000001 | HIGH       | v1.1     | COMPLETED | cosine_similarity
+(2 rows)
+
+SELECT c.claim_id,
+       p.policy_number,
+       u.full_name        AS claimant,
+       c.claimed_amount,
+       c.claim_status,
+       c.screening_status,
+       c.review_required,
+       a.risk_indicator,
+       a.risk_rule_version,
+       c.submitted_at,
+       extract(epoch FROM (now() - c.submitted_at)) / 3600
+                          AS age_hours
+FROM   claim c
+JOIN   policy   p  ON p.policy_id  = c.policy_id
+JOIN   app_user u  ON u.user_id    = c.claimant_id
+LEFT JOIN LATERAL (
+    SELECT risk_indicator, risk_rule_version, status
+    FROM   screening_assessment
+    WHERE  claim_id = c.claim_id
+    ORDER  BY attempt_no DESC LIMIT 1
+) a ON true
+WHERE  c.claim_status <> 'DECIDED'
+ORDER  BY c.review_required DESC, c.submitted_at ASC;
+               claim_id               | policy_number |   claimant    | claimed_amount | claim_status  | screening_status | review_required | risk_indicator | risk_rule_version |      submitted_at      |       age_hours       
+--------------------------------------+---------------+---------------+----------------+---------------+------------------+-----------------+----------------+-------------------+------------------------+-----------------------
+ d1000000-0000-0000-0000-000000000003 | POL-2026-0003 | Kavitha Reddy |      125000.00 | AWAITING_INFO | COMPLETED        | t               | HIGH           | v1.1              | 2026-05-22 04:30:00+00 | 4107.2711498330555556
+ d1000000-0000-0000-0000-000000000004 | POL-2026-0004 | Mohan Das     |      215000.00 | SUBMITTED     | FAILED           | f               |                |                   | 2026-07-02 02:30:00+00 | 3125.2711498330555556
+ d1000000-0000-0000-0000-000000000006 | POL-2026-0001 | Ananya Rao    |        5500.00 | SUBMITTED     | PENDING          | f               |                |                   | 2026-08-02 04:30:00+00 | 2379.2711498330555556
+(3 rows)
+
+SELECT rule_version,
+       is_active,
+       (definition->>'high_similarity_threshold')::numeric   AS high_threshold,
+       (definition->>'medium_similarity_threshold')::numeric AS medium_threshold,
+       (definition->>'description')                          AS description
+FROM   risk_rule
+WHERE  is_active;
+ rule_version | is_active | high_threshold | medium_threshold |                                                description                                                
+--------------+-----------+----------------+------------------+-----------------------------------------------------------------------------------------------------------
+ v2.0-minilm  | t         |           0.65 |             0.55 | Calibrated for sentence-transformers/all-MiniLM-L6-v2 (normalized-v1) on the synthetic calibration sample
+(1 row)
+
+SELECT a.assessment_id,
+       a.claim_id,
+       a.risk_indicator                          AS stored_indicator,
+       fn_compute_claim_risk(a.assessment_id)    AS computed_indicator
+FROM   screening_assessment a
+WHERE  a.status = 'COMPLETED';
+            assessment_id             |               claim_id               | stored_indicator | computed_indicator 
+--------------------------------------+--------------------------------------+------------------+--------------------
+ e1000000-0000-0000-0000-000000000001 | d1000000-0000-0000-0000-000000000001 | HIGH             | HIGH
+ e1000000-0000-0000-0000-000000000002 | d1000000-0000-0000-0000-000000000002 | MEDIUM           | HIGH
+ e1000000-0000-0000-0000-000000000003 | d1000000-0000-0000-0000-000000000003 | HIGH             | HIGH
+ e1000000-0000-0000-0000-000000000005 | d1000000-0000-0000-0000-000000000005 | LOW              | LOW
+(4 rows)
+
+SELECT r.case_id,
+       r.title,
+       round((1 - (r.embedding <=> a.description_embedding))::numeric, 4) AS cosine_similarity
+FROM   reference_fraud_case r,
+       screening_assessment a
+WHERE  r.is_active AND r.is_confirmed
+  AND  r.embedding_model_id = a.embedding_model_id
+  AND  a.assessment_id = 'e1000000-0000-0000-0000-000000000001'
+ORDER  BY r.embedding <=> a.description_embedding
+LIMIT  3;
+               case_id                |                        title                        | cosine_similarity 
+--------------------------------------+-----------------------------------------------------+-------------------
+ c1000000-0000-0000-0000-000000000001 | Staged Vehicle Collision — Highway NH-44            |           -0.8390
+ c1000000-0000-0000-0000-000000000002 | Water Damage — Repeated Claims Same Address         |           -0.8891
+ c1000000-0000-0000-0000-000000000003 | Medical Procedure Not Performed — Phantom Treatment |           -0.9303
+(3 rows)
+
+SELECT c.claim_id,
+       c.claim_status,
+       c.screening_status,
+       cd.decision_status,
+       a.status  AS assessment_status,
+       a.outcome AS assessment_outcome
+FROM   claim_decision cd
+JOIN   claim c ON c.claim_id = cd.claim_id
+JOIN   review rv ON rv.review_id = cd.review_id
+LEFT JOIN screening_assessment a ON a.assessment_id = rv.assessment_id
+ORDER  BY cd.decided_at;
+               claim_id               | claim_status | screening_status | decision_status | assessment_status | assessment_outcome 
+--------------------------------------+--------------+------------------+-----------------+-------------------+--------------------
+ d1000000-0000-0000-0000-000000000001 | DECIDED      | COMPLETED        | APPROVED        | COMPLETED         | MATCHES_FOUND
+ d1000000-0000-0000-0000-000000000002 | DECIDED      | COMPLETED        | REJECTED        | COMPLETED         | MATCHES_FOUND
+ d1000000-0000-0000-0000-000000000005 | DECIDED      | COMPLETED        | APPROVED        | COMPLETED         | NO_MATCH
+(3 rows)
+
+SELECT * FROM v_stale_pending_screening;
+               claim_id               |      submitted_at      | last_attempt_at | last_attempt_no 
+--------------------------------------+------------------------+-----------------+-----------------
+ d1000000-0000-0000-0000-000000000006 | 2026-08-02 04:30:00+00 |                 |               0
+(1 row)
+
+SELECT 'v_claim_status_summary'   AS view_name, claim_status::text AS col1,
+       screening_status::text AS col2, claim_count::text AS col3,
+       review_required::text AS col4
+FROM   v_claim_status_summary;
+       view_name        |     col1      |   col2    | col3 | col4  
+------------------------+---------------+-----------+------+-------
+ v_claim_status_summary | SUBMITTED     | PENDING   | 1    | false
+ v_claim_status_summary | SUBMITTED     | FAILED    | 1    | false
+ v_claim_status_summary | DECIDED       | COMPLETED | 1    | true
+ v_claim_status_summary | AWAITING_INFO | COMPLETED | 1    | true
+ v_claim_status_summary | DECIDED       | COMPLETED | 2    | false
+(5 rows)
+
+SELECT 'v_adjuster_workload' AS view_name, reviewer_id::text AS adjuster_id,
+       review_count::text, approvals::text, rejections::text
+FROM   v_adjuster_workload;
+      view_name      |             adjuster_id              | review_count | approvals | rejections 
+---------------------+--------------------------------------+--------------+-----------+------------
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000003 | 1            | 0         | 0
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000002 | 2            | 0         | 1
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000001 | 1            | 1         | 0
+ v_adjuster_workload | a2000000-0000-0000-0000-000000000004 | 1            | 1         | 0
+(4 rows)
+
+SELECT 'v_reference_match_frequency' AS view_name, title,
+       match_count::text, round(average_similarity::numeric,4)::text AS avg_sim
+FROM   v_reference_match_frequency;
+          view_name          |                        title                        | match_count | avg_sim 
+-----------------------------+-----------------------------------------------------+-------------+---------
+ v_reference_match_frequency | Theft Claim — Item Never Owned                      | 1           | 0.7490
+ v_reference_match_frequency | Staged Vehicle Collision — Highway NH-44            | 3           | 0.7085
+ v_reference_match_frequency | Medical Procedure Not Performed — Phantom Treatment | 2           | 0.7062
+ v_reference_match_frequency | Water Damage — Repeated Claims Same Address         | 2           | 0.6836
+ v_reference_match_frequency | Slip and Fall — Coordinated Claimant Network        | 1           | 0.7834
+(5 rows)
+
+SELECT 'v_high_risk_aged_queue' AS view_name, claim_id::text, claimed_amount::text,
+       age_hours::text
+FROM   v_high_risk_aged_queue;
+       view_name        |               claim_id               | claimed_amount | age_hours 
+------------------------+--------------------------------------+----------------+-----------
+ v_high_risk_aged_queue | d1000000-0000-0000-0000-000000000003 | 125000.00      | 4107
+(1 row)
+
+SELECT 'v_risk_distribution_over_time' AS view_name, assessment_day::text,
+       risk_indicator, assessment_count::text
+FROM   v_risk_distribution_over_time;
+           view_name           | assessment_day | risk_indicator | assessment_count 
+-------------------------------+----------------+----------------+------------------
+ v_risk_distribution_over_time | 2026-11-09     | HIGH           | 2
+ v_risk_distribution_over_time | 2026-11-09     | LOW            | 1
+ v_risk_distribution_over_time | 2026-11-09     | MEDIUM         | 1
+(3 rows)
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO claim (policy_id, claimant_id, incident_date, claimed_amount, description)
+    VALUES (
+      'b1000000-0000-0000-0000-000000000006',  -- expired policy
+      'a3000000-0000-0000-0000-000000000001',
+      '2024-06-01', 1000.00, 'Test claim on expired policy'
+    );
+    RAISE NOTICE 'ERROR: insert should have been rejected';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'PASS: rejected with % — %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+DO
+DO $$
+BEGIN
+  BEGIN
+    DELETE FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000006';
+    RAISE NOTICE 'ERROR: delete should have been rejected';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'PASS: delete rejected with % — %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: rejected with 23514 — policy b1000000-0000-0000-0000-000000000006 is not active
+NOTICE:  PASS: delete rejected with 23001 — claim does not allow DELETE (history is preserved)
+DO
+DO $$
+BEGIN
+  BEGIN
+    UPDATE claim SET claim_status = 'UNDER_REVIEW'
+    WHERE claim_id = 'd1000000-0000-0000-0000-000000000001';  -- already DECIDED
+    RAISE NOTICE 'ERROR: update should have been rejected';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'PASS: update rejected with % — %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: update rejected with 23001 — claim d1000000-0000-0000-0000-000000000001 is decided and final
+DO
+DO $$
+BEGIN
+  BEGIN
+    UPDATE reference_fraud_case SET is_active = true
+    WHERE case_id = 'c1000000-0000-0000-0000-000000000007';
+    RAISE NOTICE 'ERROR: reactivation should have been rejected';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'PASS: reactivation rejected with % — %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: reactivation rejected with 23001 — reference cases cannot be reactivated
+DO
+DO $$
+BEGIN
+  BEGIN
+    UPDATE information_response
+    SET body = 'Tampered response body'
+    WHERE response_id = '81000000-0000-0000-0000-000000000001';
+    RAISE NOTICE 'ERROR: update should have been rejected';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'PASS: information_response update rejected with % — %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: information_response update rejected with 23001 — information responses are append-only
+DO
+UPDATE notification
+SET read_at = now()
+WHERE notification_id = '91000000-0000-0000-0000-000000000005'
+  AND read_at IS NULL;
+UPDATE 1
+UPDATE notification
+SET dismissed_at = now()
+WHERE notification_id = '91000000-0000-0000-0000-000000000005'
+  AND dismissed_at IS NULL;
+UPDATE 1
+SELECT notification_id, notification_type, read_at, dismissed_at
+FROM   notification
+WHERE  notification_id = '91000000-0000-0000-0000-000000000005';
+           notification_id            | notification_type |            read_at            |         dismissed_at          
+--------------------------------------+-------------------+-------------------------------+-------------------------------
+ 91000000-0000-0000-0000-000000000005 | CLAIM_APPROVED    | 2026-11-09 07:46:16.165992+00 | 2026-11-09 07:46:16.167596+00
+(1 row)
+
+SELECT relname    AS tablename,
+       n_live_tup AS estimated_row_count
+FROM   pg_stat_user_tables
+WHERE  schemaname = 'public'
+ORDER  BY relname;
+      tablename       | estimated_row_count 
+----------------------+---------------------
+ app_role             |                   3
+ app_user             |                  12
+ audit_log            |                  44
+ claim                |                   6
+ claim_decision       |                   3
+ embedding_model      |                   2
+ information_response |                   1
+ notification         |                   5
+ policy               |                   6
+ reference_fraud_case |                  25
+ review               |                   5
+ risk_rule            |                   3
+ screening_assessment |                   5
+ screening_match      |                   9
+ user_session         |                   0
+(15 rows)
+
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO screening_assessment
+      (claim_id, attempt_no, status, outcome, risk_indicator, risk_rule_version,
+       embedding_model_id, description_embedding, top_k, similarity_metric)
+    SELECT 'd1000000-0000-0000-0000-000000000006', 99, 'COMPLETED', 'NO_MATCH', 'LOW', 'v9.9-missing',
+           1, embedding, 3, 'cosine_similarity'
+    FROM   reference_fraud_case WHERE case_id = 'c1000000-0000-0000-0000-000000000001';
+    RAISE NOTICE 'FAIL: unknown risk_rule_version was accepted';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'PASS: unknown rule version rejected (%): %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+NOTICE:  PASS: unknown rule version rejected (23503): insert or update on table "screening_assessment" violates foreign key constraint "fk_assessment_risk_rule_version"
+DO
+DO $$
+DECLARE
+  v_audit_before  bigint;  v_audit_after  bigint;
+  v_review_before bigint;  v_review_after bigint;
+  v_notif_before  bigint;  v_notif_after  bigint;
+  v_status        text;
+  v_review uuid; v_decision uuid; v_notification uuid;
+BEGIN
+  -- (a) blocked approval
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                         'a2000000-0000-0000-0000-000000000001',
+                         'APPROVED', 'Attempting approval while screening has FAILED.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'FAIL: approval of a FAILED-screening claim was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2a blocked as expected (%): %', SQLSTATE, SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_after FROM review    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  RAISE NOTICE 'H2a %: audit rows % -> %, reviews % -> %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after;
+
+  -- (b) success followed by a later failure in the same unit of work
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_before  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                         'a2000000-0000-0000-0000-000000000003',
+                         'REJECTED', 'Hospital records could not be verified.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'H2b inside the unit: review %, decision %, audit rows now %',
+      v_review, v_decision,
+      (SELECT count(*) FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000003');
+    RAISE EXCEPTION 'simulated failure of a later step (e.g. payment service)';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2b rolled back after: %', SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_after FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_after  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT claim_status INTO v_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  RAISE NOTICE 'H2b %: audit % -> %, reviews % -> %, notifications % -> %, claim_status %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after
+              AND v_notif_before = v_notif_after AND v_status <> 'DECIDED' THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after,
+    v_notif_before, v_notif_after, v_status;
+END $$;
+NOTICE:  H2a blocked as expected (23514): approval blocked: screening status is FAILED
+NOTICE:  H2a PASS: audit rows 2 -> 2, reviews 0 -> 0
+NOTICE:  H2b inside the unit: review 81a3bfae-57b3-4c6a-9e16-b217702b90aa, decision 3d2b133f-9936-489c-9ff3-54e032b50e34, audit rows now 5
+NOTICE:  H2b rolled back after: simulated failure of a later step (e.g. payment service)
+NOTICE:  H2b PASS: audit 3 -> 3, reviews 1 -> 1, notifications 1 -> 1, claim_status AWAITING_INFO
+DO
+SELECT 'before BEGIN' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+    stage     | claim_status  | audit_rows | decisions | notifications 
+--------------+---------------+------------+-----------+---------------
+ before BEGIN | AWAITING_INFO |          3 |         0 |             1
+(1 row)
+
+BEGIN;
+BEGIN
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                     'a2000000-0000-0000-0000-000000000003',
+                     'REJECTED', 'Hospital records could not be verified.');
+             p_review_id              |            p_decision_id             |          p_notification_id           
+--------------------------------------+--------------------------------------+--------------------------------------
+ ebbad168-fc02-434a-958e-4a7019627f1b | 370259bf-f86e-4966-8f46-3192680e2f27 | d4358f34-cb8c-457f-805e-40a884e055ad
+(1 row)
+
+SELECT 'inside transaction' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+       stage        | claim_status | audit_rows | decisions | notifications 
+--------------------+--------------+------------+-----------+---------------
+ inside transaction | DECIDED      |          5 |         1 |             2
+(1 row)
+
+ROLLBACK;
+ROLLBACK
+SELECT 'after ROLLBACK' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+     stage      | claim_status  | audit_rows | decisions | notifications 
+----------------+---------------+------------+-----------+---------------
+ after ROLLBACK | AWAITING_INFO |          3 |         0 |             1
+(1 row)
+
+DO $$
+DECLARE
+  v_probe vector;
+  v_assessment uuid; v_status varchar; v_risk varchar;
+BEGIN
+  SELECT r1.embedding + r2.embedding INTO v_probe
+  FROM   reference_fraud_case r1, reference_fraud_case r2
+  WHERE  r1.case_id = 'c1000000-0000-0000-0000-000000000001'
+    AND  r2.case_id = 'c1000000-0000-0000-0000-000000000006';
+
+  CALL sp_screen_claim('d1000000-0000-0000-0000-000000000004', 1, v_probe, 3, NULL,
+                       v_assessment, v_status, v_risk);
+  RAISE NOTICE 'H4 claim 4 screened: assessment %, status %, risk %', v_assessment, v_status, v_risk;
+END $$;
+NOTICE:  H4 claim 4 screened: assessment e83ae5bf-d125-45ad-a409-286e52dfe156, status COMPLETED, risk HIGH
+DO
+SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version,
+       m.match_rank, round(m.similarity_score::numeric, 4) AS similarity,
+       c.screening_status AS claim_screening_status, c.review_required
+FROM   screening_assessment a
+JOIN   claim c ON c.claim_id = a.claim_id
+LEFT JOIN screening_match m ON m.assessment_id = a.assessment_id
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000004'
+ORDER  BY a.attempt_no, m.match_rank;
+ attempt_no |  status   |    outcome    | risk_indicator | risk_rule_version | match_rank | similarity | claim_screening_status | review_required 
+------------+-----------+---------------+----------------+-------------------+------------+------------+------------------------+-----------------
+          1 | FAILED    |               |                |                   |            |            | COMPLETED              | t
+          2 | COMPLETED | MATCHES_FOUND | HIGH           | v2.0-minilm       |          1 |     0.9988 | COMPLETED              | t
+          2 | COMPLETED | MATCHES_FOUND | HIGH           | v2.0-minilm       |          2 |     0.9987 | COMPLETED              | t
+          2 | COMPLETED | MATCHES_FOUND | HIGH           | v2.0-minilm       |          3 |     0.9888 | COMPLETED              | t
+(4 rows)
+
+BEGIN;
+BEGIN
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                     'a2000000-0000-0000-0000-000000000001',
+                     'REJECTED', 'Retry screening matched a staged-collision pattern; repair invoices could not be verified.');
+             p_review_id              |            p_decision_id             |          p_notification_id           
+--------------------------------------+--------------------------------------+--------------------------------------
+ 6716c5de-8303-4768-babf-ca638b69b633 | d98608a0-c039-414e-a733-3d0fec75cf1a | 82b57fc3-fc1b-48c9-8ccf-a28d9c44c6ae
+(1 row)
+
+COMMIT;
+COMMIT
+SELECT c.claim_status, cd.decision_status, rv.review_action, rv.assessment_id IS NOT NULL AS review_has_evidence,
+       n.notification_type, n.message
+FROM   claim c
+JOIN   claim_decision cd ON cd.claim_id = c.claim_id
+JOIN   review rv        ON rv.review_id = cd.review_id
+JOIN   notification n   ON n.claim_id   = c.claim_id AND n.notification_type = 'CLAIM_REJECTED'
+WHERE  c.claim_id = 'd1000000-0000-0000-0000-000000000004';
+ claim_status | decision_status | review_action | review_has_evidence | notification_type |                         message                          
+--------------+-----------------+---------------+---------------------+-------------------+----------------------------------------------------------
+ DECIDED      | REJECTED        | REJECTED      | t                   | CLAIM_REJECTED    | Your claim under policy POL-2026-0004 has been rejected.
+(1 row)
+
+SELECT al.action, al.actor_type, actor.full_name AS actor, al.details
+FROM   audit_log al
+LEFT JOIN app_user actor ON actor.user_id = al.actor_id
+WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000004'
+ORDER  BY al.audit_id;
+       action        | actor_type |    actor     |                                                       details                                                        
+---------------------+------------+--------------+----------------------------------------------------------------------------------------------------------------------
+ CLAIM_SUBMITTED     | USER       | Mohan Das    | {"source": "database_trigger", "claim_status": "SUBMITTED"}
+ SCREENING_FAILED    | SYSTEM     |              | {"source": "database_trigger", "status": "FAILED", "attempt_no": 1}
+ SCREENING_COMPLETED | SYSTEM     |              | {"source": "database_trigger", "status": "COMPLETED", "attempt_no": 2}
+ REVIEW_RECORDED     | USER       | Arjun Sharma | {"source": "database_trigger", "review_id": "6716c5de-8303-4768-babf-ca638b69b633", "review_action": "REJECTED"}
+ DECISION_RECORDED   | USER       | Arjun Sharma | {"source": "database_trigger", "decision_id": "d98608a0-c039-414e-a733-3d0fec75cf1a", "decision_status": "REJECTED"}
+(5 rows)
+
+CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, NULL::vector, 3,
+                     'Embedding service unavailable: HTTP 503 (attempt 1)');
+           p_assessment_id            | p_status | p_risk_indicator 
+--------------------------------------+----------+------------------
+ b346d7ee-6945-40ca-8ad2-85f3b8e3081f | FAILED   | 
+(1 row)
+
+CALL sp_screen_claim('d1000000-0000-0000-0000-000000000006', 1, '[0.1,0.2,0.3]'::vector, 3);
+           p_assessment_id            | p_status | p_risk_indicator 
+--------------------------------------+----------+------------------
+ d80fdb12-693a-4fc5-90d5-242ceb477060 | FAILED   | 
+(1 row)
+
+SELECT a.attempt_no, a.status, a.outcome, a.risk_indicator, a.risk_rule_version, a.failure_reason,
+       c.screening_status AS claim_screening_status
+FROM   screening_assessment a
+JOIN   claim c ON c.claim_id = a.claim_id
+WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000006'
+ORDER  BY a.attempt_no;
+ attempt_no | status | outcome | risk_indicator | risk_rule_version |                     failure_reason                     | claim_screening_status 
+------------+--------+---------+----------------+-------------------+--------------------------------------------------------+------------------------
+          1 | FAILED |         |                |                   | Embedding service unavailable: HTTP 503 (attempt 1)    | FAILED
+          2 | FAILED |         |                |                   | screening error: different vector dimensions 384 and 3 | FAILED
+(2 rows)
+
+SELECT (SELECT count(*) FROM screening_assessment
+        WHERE status = 'FAILED' AND risk_indicator IS NOT NULL)           AS failed_with_risk,
+       (SELECT count(*) FROM screening_assessment a
+        WHERE status = 'COMPLETED'
+          AND NOT EXISTS (SELECT 1 FROM risk_rule r
+                          WHERE r.rule_version = a.risk_rule_version))  AS completed_without_rule;
+ failed_with_risk | completed_without_rule 
+------------------+------------------------
+                0 |                      0
+(1 row)
+
+-- exit code: 0

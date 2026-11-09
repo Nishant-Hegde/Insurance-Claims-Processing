@@ -1,19 +1,24 @@
 -- =============================================================================
--- ClaimGuard SQL Query Collection v1
+-- ClaimGuard SQL Query Collection v1 — READ-ONLY subset
 -- Compatible with: claimguard_schema_v4.sql + claimguard_seed_v1.sql
+--   + migrations 001 and 002 (section H calls the migration 002 procedures)
 --
 -- SECTIONS
---   A.  Basic SELECT â€” single-table queries
---   B.  Joins â€” multi-table queries
---   C.  Aggregation â€” GROUP BY / HAVING / FILTER
---   D.  Subqueries â€” correlated and uncorrelated
+--   A.  Basic SELECT — single-table queries
+--   B.  Joins — multi-table queries
+--   C.  Aggregation — GROUP BY / HAVING / FILTER
+--   D.  Subqueries — correlated and uncorrelated
 --   E.  CTEs (WITH clauses)
 --   F.  Window functions
---   G.  Project-specific queries â€” fraud detection, workflow, analytics
+--   G.  Project-specific queries — fraud detection, workflow, analytics
+--   H.  Transactions and stored procedures (migration 002) — rollback-only demos
+--
+-- Excludes the mutation sections G9–G14 and H4–H7 of claimguard_queries_v1.sql.
+-- Section H here only runs demos that are rolled back, so the database is left unchanged.
 -- =============================================================================
 
 -- =============================================================================
--- SECTION A â€” Basic SELECT queries
+-- SECTION A — Basic SELECT queries
 -- =============================================================================
 
 -- A1. List all active users with their role names
@@ -72,7 +77,7 @@ SELECT risk_rule_id,
 FROM   risk_rule
 ORDER  BY risk_rule_id;
 
--- A6. All notifications for a specific user â€” unread first
+-- A6. All notifications for a specific user — unread first
 SELECT notification_id,
        notification_type,
        message,
@@ -97,7 +102,7 @@ WHERE  to_tsvector('english', description)
 ORDER  BY rank DESC;
 
 -- =============================================================================
--- SECTION B â€” Join queries
+-- SECTION B — Join queries
 -- =============================================================================
 
 -- B1. Claims with their latest screening assessment outcome
@@ -198,7 +203,7 @@ ORDER  BY al.occurred_at DESC
 LIMIT  30;
 
 -- =============================================================================
--- SECTION C â€” Aggregation queries
+-- SECTION C — Aggregation queries
 -- =============================================================================
 
 -- C1. Claims summary: count by status and screening status
@@ -211,7 +216,7 @@ FROM   claim
 GROUP  BY claim_status, screening_status
 ORDER  BY claim_count DESC;
 
--- C2. Adjuster workload â€” reviews, approvals, rejections, info requests
+-- C2. Adjuster workload — reviews, approvals, rejections, info requests
 SELECT adj.full_name                AS adjuster,
        count(*)                     AS total_reviews,
        count(*) FILTER (WHERE rv.review_action = 'APPROVED')       AS approvals,
@@ -222,7 +227,7 @@ JOIN   app_user adj ON adj.user_id = rv.reviewer_id
 GROUP  BY adj.full_name
 ORDER  BY total_reviews DESC;
 
--- C3. Reference case match frequency â€” most implicated cases
+-- C3. Reference case match frequency — most implicated cases
 SELECT r.title,
        count(m.match_id)                        AS times_matched,
        round(avg(m.similarity_score)::numeric, 4) AS avg_similarity,
@@ -264,10 +269,11 @@ GROUP  BY date_trunc('month', submitted_at)
 ORDER  BY month;
 
 -- =============================================================================
--- SECTION D â€” Subqueries
+-- SECTION D — Subqueries
 -- =============================================================================
 
 -- D1. Claims that have never been screened (no assessment record at all)
+--     (correlated: the NOT EXISTS subquery refers to the outer c.claim_id)
 SELECT c.claim_id,
        u.full_name  AS claimant,
        c.submitted_at
@@ -338,7 +344,7 @@ WHERE  p.policy_id IN (
 )
 ORDER  BY p.policy_number, c.submitted_at;
 
--- D6. Users who have received at least one unread notification
+-- D6. Users who have received at least one unread notification (correlated EXISTS + scalar subquery)
 SELECT u.full_name,
        u.email,
        (SELECT count(*) FROM notification n
@@ -350,8 +356,28 @@ WHERE  EXISTS (
 )
 ORDER  BY unread_count DESC;
 
+-- D7. CORRELATED SUBQUERY: matches that are stronger than usual for that reference case.
+--     The inner query is re-evaluated for every outer row, because it refers to the
+--     outer row's m.reference_case_id: "average similarity of THIS case across all matches".
+SELECT r.title                                   AS reference_case,
+       m.assessment_id,
+       m.match_rank,
+       round(m.similarity_score::numeric, 4)     AS similarity,
+       round((SELECT avg(m2.similarity_score)
+              FROM   screening_match m2
+              WHERE  m2.reference_case_id = m.reference_case_id)::numeric, 4)
+                                                 AS case_avg_similarity
+FROM   screening_match m
+JOIN   reference_fraud_case r ON r.case_id = m.reference_case_id
+WHERE  m.similarity_score > (
+           SELECT avg(m2.similarity_score)
+           FROM   screening_match m2
+           WHERE  m2.reference_case_id = m.reference_case_id   -- correlation
+       )
+ORDER  BY r.title, similarity DESC;
+
 -- =============================================================================
--- SECTION E â€” CTEs (Common Table Expressions)
+-- SECTION E — CTEs (Common Table Expressions)
 -- =============================================================================
 
 -- E1. Full claim lifecycle: latest screening + review + decision in one view
@@ -435,23 +461,54 @@ FROM   high_risk_claims hr
 LEFT JOIN last_review lr ON lr.claim_id = hr.claim_id
 ORDER  BY hr.age_hours DESC;
 
--- E4. Recursive CTE: audit trail chain for a specific claim (ordered event history)
+-- E4. RECURSIVE CTE: monthly claim trend with zero-filled months.
+--     C6 groups claims by month, so a month with no claims simply disappears.
+--     Here WITH RECURSIVE generates every month from the first to the last submission
+--     (anchor = first month; recursive step = previous month + 1, stopping at the last
+--     month), and a LEFT JOIN keeps months with 0 claims visible in the trend.
+WITH RECURSIVE months (month_start, last_month) AS (
+    -- anchor member: the first month that has a claim
+    SELECT date_trunc('month', min(submitted_at))::date,
+           date_trunc('month', max(submitted_at))::date
+    FROM   claim
+    UNION ALL
+    -- recursive member: next month, until the last month with a claim
+    SELECT (month_start + interval '1 month')::date,
+           last_month
+    FROM   months
+    WHERE  month_start < last_month
+)
+SELECT m.month_start                                  AS month,
+       count(c.claim_id)                              AS claims_submitted,
+       coalesce(sum(c.claimed_amount), 0)             AS total_claimed,
+       count(c.claim_id) FILTER (WHERE c.review_required) AS high_risk_flagged
+FROM   months m
+LEFT JOIN claim c
+       ON date_trunc('month', c.submitted_at)::date = m.month_start
+GROUP  BY m.month_start
+ORDER  BY m.month_start;
+
+-- E4b. Ordered audit trail for one claim (non-recursive CTE + ROW_NUMBER).
+--     Columns match audit_log: occurred_at, action, actor_id, claim_id, details.
 WITH claim_events AS (
-    SELECT occurred_at,
-           action,
+    SELECT al.occurred_at,
+           al.audit_id,
+           al.action,
+           al.actor_type,
            COALESCE(actor.full_name, 'SYSTEM') AS actor,
-           details
+           al.details
     FROM   audit_log al
     LEFT JOIN app_user actor ON actor.user_id = al.actor_id
     WHERE  al.claim_id = 'd1000000-0000-0000-0000-000000000001'
-    ORDER  BY occurred_at
 )
-SELECT row_number() OVER (ORDER BY occurred_at) AS step,
+SELECT row_number() OVER (ORDER BY occurred_at, audit_id) AS step,
        occurred_at,
        action,
+       actor_type,
        actor,
        details
-FROM   claim_events;
+FROM   claim_events
+ORDER  BY step;
 
 -- E5. Policy utilization: policies with claim count, total exposure, and decision rate
 WITH policy_stats AS (
@@ -476,7 +533,7 @@ FROM   policy_stats
 ORDER  BY total_exposure DESC;
 
 -- =============================================================================
--- SECTION F â€” Window functions
+-- SECTION F — Window functions
 -- =============================================================================
 
 -- F1. Rank claims by amount within each claimant using RANK()
@@ -500,7 +557,7 @@ FROM   claim c
 JOIN   app_user u ON u.user_id = c.claimant_id
 ORDER  BY c.submitted_at;
 
--- F3. Similarity score ranked within each assessment â€” top match highlighted
+-- F3. Similarity score ranked within each assessment — top match highlighted
 SELECT a.claim_id,
        m.match_rank,
        r.title             AS matched_case,
@@ -559,7 +616,7 @@ WINDOW w AS (PARTITION BY a.claim_id ORDER BY a.attempt_no
              ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING);
 
 -- =============================================================================
--- SECTION G â€” Project-specific queries
+-- SECTION G — Project-specific queries
 -- =============================================================================
 
 -- G1. FRAUD SCREENING EVIDENCE REPORT
@@ -588,7 +645,7 @@ FROM   screening_assessment a
 WHERE  a.claim_id = 'd1000000-0000-0000-0000-000000000001'
 ORDER  BY section;
 
--- G2. REVIEW QUEUE â€” open claims requiring adjuster attention
+-- G2. REVIEW QUEUE — open claims requiring adjuster attention
 --     (Uses the built-in view; shown here as the underlying query for clarity)
 SELECT c.claim_id,
        p.policy_number,
@@ -648,7 +705,7 @@ WHERE  r.is_active AND r.is_confirmed
 ORDER  BY r.embedding <=> a.description_embedding
 LIMIT  3;
 
--- G6. CLAIM DECISION AUDIT â€” verify no claim was decided without a completed screening
+-- G6. CLAIM DECISION AUDIT — verify no claim was decided without a completed screening
 SELECT c.claim_id,
        c.claim_status,
        c.screening_status,
@@ -665,7 +722,7 @@ ORDER  BY cd.decided_at;
 --     Claims that have been pending screening for more than 15 minutes.
 SELECT * FROM v_stale_pending_screening;
 
--- G8. REPORTING VIEWS â€” results from all five pre-built views
+-- G8. REPORTING VIEWS — results from all five pre-built views
 SELECT 'v_claim_status_summary'   AS view_name, claim_status::text AS col1,
        screening_status::text AS col2, claim_count::text AS col3,
        review_required::text AS col4
@@ -687,10 +744,115 @@ SELECT 'v_risk_distribution_over_time' AS view_name, assessment_day::text,
        risk_indicator, assessment_count::text
 FROM   v_risk_distribution_over_time;
 
--- G15. COMPLETE TABLE ROW COUNTS â€” verify all 14 tables are populated
+-- G15. COMPLETE TABLE ROW COUNTS — verify all 14 tables are populated
 SELECT
     relname AS tablename,
     n_live_tup AS estimated_row_count
 FROM pg_stat_user_tables
 ORDER BY relname;
 
+-- =============================================================================
+-- SECTION H — Transactions and stored procedures (requires migration 002)
+-- =============================================================================
+-- H1–H3 leave the database unchanged: every change they make is rolled back.
+
+-- H1. FOREIGN KEY CHECK — a screening cannot name a risk-rule version that does not exist
+--     (fk_assessment_risk_rule_version, enforced by migration 002).
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO screening_assessment
+      (claim_id, attempt_no, status, outcome, risk_indicator, risk_rule_version,
+       embedding_model_id, description_embedding, top_k, similarity_metric)
+    SELECT 'd1000000-0000-0000-0000-000000000006', 99, 'COMPLETED', 'NO_MATCH', 'LOW', 'v9.9-missing',
+           1, embedding, 3, 'cosine_similarity'
+    FROM   reference_fraud_case WHERE case_id = 'c1000000-0000-0000-0000-000000000001';
+    RAISE NOTICE 'FAIL: unknown risk_rule_version was accepted';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'PASS: unknown rule version rejected (%): %', SQLSTATE, SQLERRM;
+  END;
+END $$;
+
+-- H2. ATOMICITY ON FAILURE — sp_decide_claim is all-or-nothing.
+--     (a) Approving claim 4, whose only screening FAILED, is blocked by fn_assert_approvable.
+--     (b) Rejecting claim 3 succeeds (review + decision + notification + 2 audit rows), then a
+--         later step in the same transaction fails. The exception handler rolls the whole
+--         block back to its savepoint, so the audit rows written by the triggers vanish too.
+DO $$
+DECLARE
+  v_audit_before  bigint;  v_audit_after  bigint;
+  v_review_before bigint;  v_review_after bigint;
+  v_notif_before  bigint;  v_notif_after  bigint;
+  v_status        text;
+  v_review uuid; v_decision uuid; v_notification uuid;
+BEGIN
+  -- (a) blocked approval
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000004',
+                         'a2000000-0000-0000-0000-000000000001',
+                         'APPROVED', 'Attempting approval while screening has FAILED.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'FAIL: approval of a FAILED-screening claim was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2a blocked as expected (%): %', SQLSTATE, SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  SELECT count(*) INTO v_review_after FROM review    WHERE claim_id = 'd1000000-0000-0000-0000-000000000004';
+  RAISE NOTICE 'H2a %: audit rows % -> %, reviews % -> %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after;
+
+  -- (b) success followed by a later failure in the same unit of work
+  SELECT count(*) INTO v_audit_before  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_before FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_before  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  BEGIN
+    CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                         'a2000000-0000-0000-0000-000000000003',
+                         'REJECTED', 'Hospital records could not be verified.',
+                         v_review, v_decision, v_notification);
+    RAISE NOTICE 'H2b inside the unit: review %, decision %, audit rows now %',
+      v_review, v_decision,
+      (SELECT count(*) FROM audit_log WHERE claim_id = 'd1000000-0000-0000-0000-000000000003');
+    RAISE EXCEPTION 'simulated failure of a later step (e.g. payment service)';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'H2b rolled back after: %', SQLERRM;
+  END;
+  SELECT count(*) INTO v_audit_after  FROM audit_log    WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_review_after FROM review       WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT count(*) INTO v_notif_after  FROM notification WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  SELECT claim_status INTO v_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003';
+  RAISE NOTICE 'H2b %: audit % -> %, reviews % -> %, notifications % -> %, claim_status %',
+    CASE WHEN v_audit_before = v_audit_after AND v_review_before = v_review_after
+              AND v_notif_before = v_notif_after AND v_status <> 'DECIDED' THEN 'PASS' ELSE 'FAIL' END,
+    v_audit_before, v_audit_after, v_review_before, v_review_after,
+    v_notif_before, v_notif_after, v_status;
+END $$;
+
+-- H3. EXPLICIT ROLLBACK — BEGIN; CALL sp_decide_claim(...); ROLLBACK;
+--     Inside the transaction the review, decision, notification and audit rows exist.
+--     After ROLLBACK the claim is back to AWAITING_INFO and the audit count is unchanged.
+SELECT 'before BEGIN' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+
+BEGIN;
+CALL sp_decide_claim('d1000000-0000-0000-0000-000000000003',
+                     'a2000000-0000-0000-0000-000000000003',
+                     'REJECTED', 'Hospital records could not be verified.');
+SELECT 'inside transaction' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
+ROLLBACK;
+
+SELECT 'after ROLLBACK' AS stage,
+       (SELECT claim_status FROM claim WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS claim_status,
+       (SELECT count(*) FROM audit_log      WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS audit_rows,
+       (SELECT count(*) FROM claim_decision WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS decisions,
+       (SELECT count(*) FROM notification   WHERE claim_id = 'd1000000-0000-0000-0000-000000000003') AS notifications;
