@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "@/app/db/pool";
 import type { ClaimRow, ClaimsResponse } from "@/app/types";
 import { requireRole } from "@/app/lib/auth";
-import { cleanText, dbErrorResponse, isUuid, jsonError, readJsonObject } from "@/app/lib/http";
+import { cleanText, dbErrorResponse, isIsoDate, isUuid, jsonError, readJsonObject } from "@/app/lib/http";
 import { screenClaim } from "@/app/lib/screening";
 import { shortClaimId } from "@/app/lib/format";
 
@@ -35,8 +35,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const description = cleanText(body.description, 20, 5000);
 
   if (!isUuid(policyId)) return jsonError(400, "Choose one of your policies.");
-  if (typeof incidentDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(incidentDate) ||
-      Number.isNaN(Date.parse(`${incidentDate}T00:00:00Z`))) {
+  if (!isIsoDate(incidentDate)) {
     return jsonError(400, "Incident date must be a valid date (YYYY-MM-DD).");
   }
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT ||
@@ -109,6 +108,8 @@ function riskLabel(
   riskIndicator: string | null
 ): string {
   if (screeningStatus === "PENDING") return "Pending";
+  // BR-13: a failed screening is shown as failed, never as a risk level.
+  if (screeningStatus === "FAILED") return "Screening failed";
   if (!riskIndicator) return "Pending";
   const lower = riskIndicator.toLowerCase();
   if (lower.includes("high")) return "High";
