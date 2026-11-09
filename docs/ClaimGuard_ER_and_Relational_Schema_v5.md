@@ -4,7 +4,7 @@
 **Database implementation baseline:** `claimguard_schema_v4.sql`.  
 **Purpose:** a polished, submission-ready data-model reference with explicit distinction between implemented database structures and remaining SRS traceability gaps.
 
-> **Status and grading integrity.** This document improves the data-model presentation and aligns its entity set to the SRS. The images are diagrams of the current v4 SQL plus one explicitly marked conceptual relationship gap. They are not evidence that every SRS requirement has passed integration testing. The risk-rule version is currently stored as text in `screening_assessment`; the SQL does **not** yet enforce a foreign key to `risk_rule`. See §7.
+> **Status and grading integrity.** This document improves the data-model presentation and aligns its entity set to the SRS. The images are diagrams of the current v4 SQL plus one explicitly marked conceptual relationship gap. They are not evidence that every SRS requirement has passed integration testing. **Update (migration 002):** the risk-rule association is now enforced. `database/migrations/002_risk_rule_fk_and_procedure.sql` guarantees the foreign key `screening_assessment.risk_rule_version → risk_rule.rule_version` (`ON UPDATE/DELETE RESTRICT`) and adds `sp_screen_claim` to write the risk result and rule version atomically. See §6 and §7.
 
 ## 1. ER diagram — ClaimGuard data model
 
@@ -54,7 +54,7 @@ The relational-schema diagram lists each relation's key columns and core attribu
 | `review` | `information_response` | 1:N | Responses reference the request review and claim |
 | `app_user` | `notification` | 1:N | Notifications are tied to their recipient |
 | `claim`, `reference_fraud_case`, `app_user`, `screening_assessment` | `audit_log` | 1:N (optional scope) | Target-kind and composite-scope checks constrain events |
-| `risk_rule` | `screening_assessment` | intended 1:N | **Conceptual only:** version is text, not an FK in SQL v4 |
+| `risk_rule` | `screening_assessment` | 1:N (optional) | FK on `risk_rule_version → rule_version`, enforced by migration 002; NULL for FAILED attempts |
 
 ## 4. Relational definitions and constraints
 
@@ -80,8 +80,8 @@ Some controlled denormalization exists for operational reasons: `claim.claimant_
 |---|---|---|
 | FR-02 / BR-01 — ownership and role access | Ownership composite FK and role checks | Database integrity is not a substitute for API read-side authorization; test tenant/owner isolation |
 | FR-03–06 — claim intake and similarity evidence | Claim, assessment, match, model tables and constraints | Validate end-to-end service and top-k results |
-| FR-07 / BR-06 / AC-11 — versioned risk scoring | `risk_rule`, JSON threshold checks, `fn_compute_claim_risk` | **Gap:** assessment version is not FK-bound to `risk_rule`; function returns a result but does not itself persist the result or bind the chosen rule version atomically |
-| FR-08–09 — review and HIGH-risk approval guard | Review/decision guard plus `review_required` flag | **Verify/close:** ensure HIGH-risk approval requires a started and resolved review; a flag alone does not prove the required review sequence |
+| FR-07 / BR-06 / AC-11 — versioned risk scoring | `risk_rule`, JSON threshold checks, `fn_compute_claim_risk`, FK + `sp_screen_claim` (migration 002) | **Closed in migration 002:** assessment version is FK-bound to `risk_rule`; `sp_screen_claim` locks the active rule (`FOR SHARE`), persists risk + rule version in the same insert, and cross-checks the result with `fn_compute_claim_risk` |
+| FR-08–09 — review and HIGH-risk approval guard | Review/decision guard plus `review_required` flag; `fn_assert_approvable` extended in migration 004 | **Closed in migration 004:** a HIGH-risk claim is approvable only after an `INFO_REQUESTED` review exists and every request has an `information_response` ("review started and resolved") |
 | FR-10 — transactional audit | Trigger-written audit for claim, assessment, review, decision, policy, response and notification events | Actor attribution depends on trusted transaction context for trigger-generated system/user identity; test each event and rollback behavior |
 | FR-11 — reference-case management | Active/confirmed filtering and controlled deactivation | Verify admin authorization and immutable evidence in integration tests |
 | FR-12 / FR-21 — operational and analytical reports | Status, review queue, risk, match-frequency, workload, aged HIGH-risk and stale-pending views | Views need fixture-based correctness tests and performance measurements |
@@ -89,7 +89,7 @@ Some controlled denormalization exists for operational reasons: `claim.claimant_
 | FR-14–15 — failure handling and validation | Explicit FAILED state, checks and state guards | Test application-visible error mapping and prohibited transitions |
 | FR-16 — automatic HIGH-risk flag | `trg_high_risk_flag` sets `claim.review_required` on HIGH assessment | Confirm rule result is persisted consistently before trigger execution; ensure no automatic denial path |
 | FR-17 — policy issuance | Policy table and issuance audit trigger | Current audit event is represented as a target-user event; consider a dedicated policy target if SRS requires direct policy lookup from audit |
-| FR-18 — information response | `information_response` plus append-only and audit triggers | **Verify/close:** DB trigger must ensure response is by the policyholder and references an outstanding `INFO_REQUESTED` review |
+| FR-18 — information response | `information_response` plus append-only, audit and guard triggers | **Closed in migration 004:** `trg_information_response_guard` requires the claim's own policyholder and its latest, unanswered `INFO_REQUESTED` review; answering returns the claim to `UNDER_REVIEW` |
 | FR-19 — notifications | `notification`, recipient index and read/dismiss guards | User-specific access is primarily enforced in API queries/authorization; test cross-user reads and dismissal attempts |
 | FR-20 — full-text search | GIN index on `to_tsvector('english', description)` | Verify ranked query and filters; index alone does not implement the API |
 | FR-22 — retry and recovery | Attempt uniqueness, status guards and `v_stale_pending_screening` | Bounded retry/backoff and idempotency keys remain application/orchestrator responsibilities; test concurrency |
@@ -97,10 +97,10 @@ Some controlled denormalization exists for operational reasons: `claim.claimant_
 
 ## 7. Prioritized improvements before calling the model final
 
-1. **Bind assessments to immutable risk-rule versions.** Add a foreign key from `screening_assessment.risk_rule_version` to `risk_rule.rule_version` (or store `risk_rule_id` directly). Prevent mutation/deletion of published rules and define how active-rule selection is serialized with screening.
-2. **Make risk computation atomic and reproducible.** Compute from persisted matches, record the exact rule version used, persist the resulting risk in the assessment, and only then set `review_required` for HIGH. Avoid a race where the active rule changes between selection and recording.
-3. **Enforce the HIGH-risk review sequence.** Define the SRS-compatible meaning of “review started and resolved”; enforce it in a guarded procedure/trigger and test attempts to approve without it. Do not auto-deny claims.
-4. **Harden information-response authorization.** Require an outstanding information request for the same claim and the responder to be that claim's policyholder; keep response history append-only.
+1. ~~**Bind assessments to immutable risk-rule versions.**~~ **Done (migration 002):** FK from `screening_assessment.risk_rule_version` to `risk_rule.rule_version` with `ON UPDATE/DELETE RESTRICT`, so a referenced rule cannot be renamed or deleted. `sp_screen_claim` serializes active-rule selection with `SELECT … FOR SHARE`. Still open: editing the `definition` of a rule that is already referenced is not blocked.
+2. ~~**Make risk computation atomic and reproducible.**~~ **Done (migration 002):** `sp_screen_claim` records risk and rule version in the assessment insert, so `trg_high_risk_flag` sees them. It then verifies the result against the persisted matches with `fn_compute_claim_risk` and rolls the attempt back on any mismatch.
+3. **Done (migration 004):** ~~Enforce the HIGH-risk review sequence.~~ Define the SRS-compatible meaning of “review started and resolved”; enforce it in a guarded procedure/trigger and test attempts to approve without it. Do not auto-deny claims.
+4. **Done (migration 004):** ~~Harden information-response authorization.~~ Require an outstanding information request for the same claim and the responder to be that claim's policyholder; keep response history append-only.
 5. **Complete audit target semantics.** If policy-level audit retrieval is required, add `policy_id` as a target and update the one-target/action-target constraints. Do not overload `target_user_id` as the only policy link without documenting that compromise.
 6. **Verify notification authorization.** Enforce ownership in API queries and test that users cannot read or dismiss another user's notification.
 7. **Run repeatable integration tests.** Load the DDL into a disposable PostgreSQL + pgvector database; test every applicable FR/AC, transaction rollback, role boundaries, concurrent retry, high-risk approval guard and reporting views.
@@ -108,7 +108,7 @@ Some controlled denormalization exists for operational reasons: `claim.claimant_
 
 ## 8. Diagram scope and implementation caveats
 
-- The ER PNG shows all 14 tables in `claimguard_schema_v4.sql`; a dashed relationship denotes the intended `risk_rule` ↔ `screening_assessment` association which is **not currently a database FK**.
+- The ER PNG shows all 14 tables in `claimguard_schema_v4.sql`. Its dashed `risk_rule` ↔ `screening_assessment` relationship predates migration 002; that association **is now a database FK** and should be redrawn as a normal FK line.
 - The relational-schema PNG displays attributes and key constraints; the SQL file remains authoritative for full nullability, defaults, checks, trigger behavior, indexes and exact FK actions.
 - Reporting views are intentionally omitted from both entity diagrams.
 - The fixed vector dimension (`384`) is an implementation assumption that must match the embedding model used by the service.
@@ -116,4 +116,6 @@ Some controlled denormalization exists for operational reasons: `claim.claimant_
 
 ## 9. Change log
 
+- **v5.2:** Migration 004 closes FR-08/09 (HIGH-risk approval rule) and FR-18 (information-response authorization).
+- **v5.1:** Migration 002 enforces the `risk_rule` FK and adds `sp_screen_claim` / `sp_decide_claim`; ER overview image renamed to `ClaimGuard_ER_Diagram_Overview.png` so the link in §1 resolves.
 - **v5:** Rebased against SRS v2.0 and the latest `claimguard_schema_v4.sql`; included the three SRS extension entities (`risk_rule`, `information_response`, `notification`); regenerated clean monochrome PNG diagrams; added explicit distinction between implemented FK relationships and the risk-rule versioning gap; expanded SRS traceability and prioritized closure plan.
