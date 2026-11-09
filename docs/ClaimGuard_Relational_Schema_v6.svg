@@ -94,6 +94,8 @@
 <text x="1120.0" y="698.0" font-size="15" text-anchor="middle" fill="#111">deactivated_by</text>
 <rect x="1192" y="678" width="144" height="30" fill="#ececec" stroke="#222" stroke-width="1.2"/>
 <text x="1264.0" y="698.0" font-size="15" text-anchor="middle" fill="#111">deactivated_at</text>
+<rect x="1336" y="678" width="170" height="30" fill="#ececec" stroke="#222" stroke-width="1.2"/>
+<text x="1421.0" y="698.0" font-size="15" text-anchor="middle" fill="#111">supersedes_case_id</text>
 <text x="40" y="785" font-size="17" font-weight="bold" fill="#111" letter-spacing="0.5">RISK_RULE</text>
 <rect x="40" y="793" width="128" height="30" fill="#ececec" stroke="#222" stroke-width="1.2"/>
 <text x="104.0" y="813.0" font-size="15" text-anchor="middle" fill="#111" text-decoration="underline">risk_rule_id</text>
@@ -269,4 +271,6 @@
 <path d="M871.0,1544.0 L871.0,1561.0 L2004.0,1561.0 L2004.0,150.0 L185.0,150.0 L185.0,127.0" fill="none" stroke="#111" stroke-width="1.2" marker-end="url(#ah)"/>
 <path d="M1011.0,1544.0 L1011.0,1554.0 L1905.0,1554.0 L1905.0,948.0 L122.0,948.0 L122.0,918.0" fill="none" stroke="#111" stroke-width="1.2" marker-end="url(#ah)"/>
 <path d="M194.0,1659.0 L194.0,1669.0 L2022.0,1669.0 L2022.0,143.0 L199.0,143.0 L199.0,127.0" fill="none" stroke="#111" stroke-width="1.2" marker-end="url(#ah)"/>
+<!-- migration 003: reference_fraud_case.supersedes_case_id -> reference_fraud_case.case_id (self FK) -->
+<path d="M1421.0,708.0 L1421.0,754.0 L104.0,754.0 L104.0,709.0" fill="none" stroke="#111" stroke-width="1.2" marker-end="url(#ah)"/>
 </svg>
