@@ -65,13 +65,14 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
     error = "The queue could not be loaded. Try again.";
   }
   const flagged = rows.filter((r) => r.reviewRequired).length;
+  const filtered = Boolean(filters.q || filters.status || filters.risk || filters.from || filters.to || filters.flaggedOnly);
   const input = "rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm";
 
   return (
     <SimpleShell
       user={user}
       title="Review queue"
-      subtitle={`${rows.length} open claim${rows.length === 1 ? "" : "s"}${flagged ? ` · ${flagged} flagged for mandatory review` : ""}`}
+      subtitle={`${rows.length} ${filtered ? "matching " : ""}open claim${rows.length === 1 ? "" : "s"}${flagged ? ` · ${flagged} flagged for mandatory review` : ""}`}
     >
       <form method="get" className="panel mb-5 grid gap-3 p-4 md:grid-cols-6">
         <input name="q" defaultValue={q ?? ""} placeholder="Search descriptions (e.g. garage invoice)" className={`${input} md:col-span-2`} />
