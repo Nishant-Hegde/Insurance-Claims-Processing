@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DashboardStats, ClaimRow, SessionUser } from "@/app/types";
 import { ROLE_LABELS } from "@/app/types";
 import LogoutButton from "@/app/components/LogoutButton";
+import { NAV } from "@/app/lib/nav";
 
 function initials(name: string): string {
   return name
@@ -17,16 +18,17 @@ function initials(name: string): string {
 // ---------------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------------
-const navigation = [
-  { label: "Overview", icon: "◫" },
-  { label: "Claims", icon: "▤" },
-  { label: "Fraud screening", icon: "⌕" },
-  { label: "Reviews & decisions", icon: "☷" },
-  { label: "Reference cases", icon: "▦" },
-  { label: "Notifications", icon: "♧" },
-  { label: "Audit history", icon: "◷" },
-  { label: "Reports", icon: "▥" },
-] as const;
+const NAV_ICON: Record<string, string> = {
+  "/": "◫",
+  "/admin": "▥",
+  "/adjuster/queue": "☷",
+  "/admin/reference-cases": "▦",
+  "/admin/policies": "▤",
+  "/admin/users": "☺",
+  "/admin/audit": "◷",
+  "/similar": "≈",
+  "/notifications": "♧",
+};
 
 // ---------------------------------------------------------------------------
 // Style helpers
@@ -41,6 +43,8 @@ function riskStyle(risk: string): React.CSSProperties {
 function statusStyle(status: string): React.CSSProperties {
   if (status === "Approved" || status === "Decided")
     return { background: "#e6f7ef", color: "#16794b" };
+  if (status === "Rejected")
+    return { background: "#fff0ed", color: "#b93827" };
   if (status === "Under review")
     return { background: "#edf1ff", color: "#3154c8" };
   if (status === "Information needed")
@@ -96,8 +100,7 @@ function StatCard({
 // ---------------------------------------------------------------------------
 // Main dashboard
 // ---------------------------------------------------------------------------
-export default function Dashboard({ user }: { user: SessionUser }) {
-  const [active, setActive] = useState<string>("Overview");
+export default function Dashboard({ user, unread }: { user: SessionUser; unread: number }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All claims");
 
@@ -240,31 +243,29 @@ export default function Dashboard({ user }: { user: SessionUser }) {
           Workspace
         </p>
         <nav className="flex flex-col gap-1">
-          {navigation.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setActive(item.label)}
-              className={`sidebar-link text-left ${active === item.label ? "active" : ""}`}
+          {NAV[user.role].map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className={`sidebar-link ${item.href === "/" ? "active" : ""}`}
             >
-              <span className="w-5 text-center text-lg">{item.icon}</span>
+              <span className="w-5 text-center text-lg">{NAV_ICON[item.href] ?? "•"}</span>
               <span className="text-[13px] font-medium">{item.label}</span>
-              {item.label === "Reviews & decisions" &&
+              {item.href === "/adjuster/queue" &&
                 pendingReviewCount !== null &&
                 pendingReviewCount > 0 && (
                   <span className="ml-auto rounded-md bg-[#dbe6ff] px-2 py-0.5 text-[10px] font-bold text-[#2446a5]">
                     {pendingReviewCount}
                   </span>
                 )}
-            </button>
+              {item.href === "/notifications" && unread > 0 && (
+                <span className="ml-auto rounded-md bg-[#dbe6ff] px-2 py-0.5 text-[10px] font-bold text-[#2446a5]">
+                  {unread}
+                </span>
+              )}
+            </a>
           ))}
         </nav>
-
-        {user.role === "ADMIN" && (
-          <a href="/admin/users" className="sidebar-link mt-1">
-            <span className="w-5 text-center text-lg">☺</span>
-            <span className="text-[13px] font-medium">Users & sessions</span>
-          </a>
-        )}
 
         <div className="mt-auto rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-white">
@@ -294,22 +295,25 @@ export default function Dashboard({ user }: { user: SessionUser }) {
         {/* Header */}
         <header className="flex min-h-[76px] flex-wrap items-center justify-between gap-4 border-b border-[#e5eaf1] bg-white px-5 py-4 md:px-9">
           <div>
-            <p className="text-xs text-slate-500">ClaimGuard / {active}</p>
-            <h1 className="mt-1 text-lg font-bold text-[#172b4d]">
-              {active === "Overview" ? "Claims overview" : active}
-            </h1>
+            <p className="text-xs text-slate-500">ClaimGuard / Dashboard</p>
+            <h1 className="mt-1 text-lg font-bold text-[#172b4d]">Claims overview</h1>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-xs text-slate-500 sm:inline">
               Insurance operations
             </span>
-            <button
-              aria-label="Notifications"
-              onClick={() => setActive("Notifications")}
+            <a
+              href="/notifications"
+              aria-label={`Notifications (${unread} unread)`}
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-lg hover:bg-slate-50"
             >
               ♧
-            </button>
+              {unread > 0 && (
+                <span className="absolute -right-1 -top-1 rounded-full bg-[#315ee7] px-1.5 text-[10px] font-bold text-white">
+                  {unread}
+                </span>
+              )}
+            </a>
             <div
               title={`${user.fullName} (${ROLE_LABELS[user.role]})`}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e7edff] text-xs font-bold text-[#3154c8]"
@@ -333,12 +337,12 @@ export default function Dashboard({ user }: { user: SessionUser }) {
                 Here is the current overview of your claims workspace.
               </p>
             </div>
-            <button
-              onClick={() => setActive("Claims")}
+            <a
+              href="/adjuster/queue"
               className="rounded-lg bg-[#315ee7] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#2449c6]"
             >
-              + New claim
-            </button>
+              Open review queue
+            </a>
           </div>
 
           {/* Stats error banner */}
@@ -655,7 +659,9 @@ export default function Dashboard({ user }: { user: SessionUser }) {
                           className="hover:bg-slate-50/70 transition-colors"
                         >
                           <td className="whitespace-nowrap px-5 py-4 text-xs font-bold text-[#3154c8]">
-                            {claim.id}
+                            <a href={`/adjuster/claims/${claim.claimId}`} className="hover:underline">
+                              {claim.id}
+                            </a>
                           </td>
                           <td className="whitespace-nowrap px-5 py-4 text-xs font-semibold text-[#172b4d]">
                             {claim.claimant}
