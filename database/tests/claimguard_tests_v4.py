@@ -2,17 +2,31 @@
 from psycopg2 import errors
 
 if len(sys.argv) < 2:
-    raise SystemExit("Usage: python claimguard_tests_v4.py claimguard_test_<yourname> [schema.sql]")
+    raise SystemExit("Usage: python claimguard_tests_v4.py claimguard_test_<yourname> [schema.sql] [--no-migrations]\n"
+                     "Connection settings come from the standard libpq variables (PGHOST, PGPORT, PGUSER, PGPASSWORD).")
 DB = sys.argv[1]
 if not DB.startswith("claimguard_test_") or not DB.replace("_", "").isalnum():
     raise SystemExit("Safety stop: test database name must start with claimguard_test_ and contain only letters, digits, underscores. The runner recreates this database.")
-SCHEMA = str(pathlib.Path(sys.argv[2]).resolve()) if len(sys.argv) > 2 else str(pathlib.Path(__file__).with_name("claimguard_schema_v4.sql"))
+ARGS = [a for a in sys.argv[2:] if not a.startswith("--")]
+RUN_MIGRATIONS = "--no-migrations" not in sys.argv
+DB_DIR = pathlib.Path(__file__).resolve().parent.parent
+SCHEMA = str(pathlib.Path(ARGS[0]).resolve()) if ARGS else str(DB_DIR / "schema" / "claimguard_schema_v4.sql")
 if not pathlib.Path(SCHEMA).is_file():
     raise SystemExit(f"Schema file not found: {SCHEMA}")
-# No shell=True: the DB name and schema path are passed as separate argv items.
-subprocess.run(["dropdb", "--if-exists", DB], check=True, capture_output=True, text=True)
-subprocess.run(["createdb", DB], check=True, capture_output=True, text=True)
-subprocess.run(["psql", "-v", "ON_ERROR_STOP=1", "-q", "-d", DB, "-f", SCHEMA], check=True, capture_output=True, text=True)
+# Migrations 001-004 are applied in order after the schema (the app and these tests need them).
+MIGRATIONS = sorted((DB_DIR / "migrations").glob("[0-9][0-9][0-9]_*.sql")) if RUN_MIGRATIONS else []
+
+def run(cmd):
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise SystemExit(f"command failed: {' '.join(cmd)}\n{p.stderr.strip()}")
+
+# No shell=True: the DB name and file paths are passed as separate argv items.
+run(["dropdb", "--if-exists", DB])
+run(["createdb", DB])
+for f in [SCHEMA, *map(str, MIGRATIONS)]:
+    run(["psql", "-X", "-v", "ON_ERROR_STOP=1", "-q", "-d", DB, "-f", f])
+print("applied:", ", ".join(pathlib.Path(f).name for f in [SCHEMA, *map(str, MIGRATIONS)]))
 
 def conn():
     c = psycopg2.connect(dbname=DB); c.autocommit = False; return c
@@ -355,8 +369,277 @@ a("notification content cannot be rewritten", lambda k: k.execute("UPDATE notifi
 a("notification cannot be deleted", lambda k: k.execute("DELETE FROM notification"), RESTR)
 expect_err("information response with blank body is rejected", lambda k: k.execute("INSERT INTO information_response(review_id,claim_id,responder_id,body) VALUES(gen_random_uuid(),gen_random_uuid(),%s,' ')",(H1,)))
 
+# =====================================================================================
+# Migrations 002-004 (skipped with --no-migrations)
+# =====================================================================================
+class Check(Exception):
+    pass
+
+def need(cond, msg):
+    if not cond:
+        raise Check(msg)
+
+def scenario(name, fn, commit=True):
+    """Run fn(k) in its own transaction. Asserts use need(); commit=False always rolls back."""
+    cc = conn(); k = cc.cursor()
+    try:
+        fn(k)
+        cc.commit() if commit else cc.rollback()
+        rec(name, True)
+    except Check as e:
+        cc.rollback(); rec(name, False, str(e))
+    except psycopg2.Error as e:
+        cc.rollback(); rec(name, False, f"unexpected {e.pgcode} {str(e).splitlines()[0]}")
+    finally:
+        cc.close()
+
+def expect_err_msg(name, fn, code, text):
+    """Like expect_err, but the error message must also contain `text`."""
+    cc = conn(); k = cc.cursor()
+    try:
+        fn(k); cc.commit(); rec(name, False, "no error raised")
+    except psycopg2.Error as e:
+        cc.rollback()
+        ok = e.pgcode == code and text in str(e)
+        rec(name, ok, "" if ok else f"got {e.pgcode} {str(e).splitlines()[0]}")
+    finally:
+        cc.close()
+
+def one(k, sql, args=()):
+    k.execute(sql, args); return k.fetchone()
+
+def screen(k, claim, emb, topk=3, reason=None, model=M1):
+    """CALL sp_screen_claim; returns (assessment_id, status, risk_indicator)."""
+    k.execute("CALL sp_screen_claim(%s, %s, %s::vector, %s, %s, NULL, NULL, NULL)", (claim, model, emb, topk, reason))
+    return k.fetchone()
+
+def decide_sp(k, claim, reviewer, action, notes="adjuster notes for the test"):
+    """CALL sp_decide_claim; returns (review_id, decision_id, notification_id)."""
+    k.execute("CALL sp_decide_claim(%s, %s, %s, %s, NULL, NULL, NULL)", (claim, reviewer, action, notes))
+    return k.fetchone()
+
+def counts(k, claim):
+    return one(k, """SELECT (SELECT count(*) FROM review WHERE claim_id=%(c)s),
+                            (SELECT count(*) FROM claim_decision WHERE claim_id=%(c)s),
+                            (SELECT count(*) FROM notification WHERE claim_id=%(c)s),
+                            (SELECT count(*) FROM audit_log WHERE claim_id=%(c)s),
+                            (SELECT claim_status FROM claim WHERE claim_id=%(c)s)""", {"c": claim})
+
+if MIGRATIONS:
+    ACTIVE_RULE = q1("SELECT rule_version FROM risk_rule WHERE is_active")   # 'test-rule-v1' (0.90 / 0.70)
+
+    print("== migration 002: risk-rule foreign key (BR-06, FR-07)")
+    expect_err("FK: assessment citing an unknown risk_rule version rejected",
+               lambda k: asmt(k, newclaim(cur_=k), 1, 'COMPLETED', outcome='NO_MATCH', risk='LOW', rule='no-such-rule',
+                              model=M1, emb=vec(1), topk=3, metric='cosine'), FK)
+    expect_err("FK: a risk_rule used by an assessment cannot be deleted",
+               lambda k: k.execute("DELETE FROM risk_rule WHERE rule_version='r1'"), FK)
+    expect_err("FK: a used rule_version cannot be renamed",
+               lambda k: k.execute("UPDATE risk_rule SET rule_version='r1-renamed' WHERE rule_version='r1'"), FK)
+
+    print("== migration 002: sp_screen_claim (FR-05/06/07/14/16, AC-04/05/10/11)")
+    HIGH_CLAIM = []      # filled by the next scenario, used by the HIGH-risk workflow tests
+    def t_screen_completed(k):
+        cl = newclaim(cur_=k, desc="screen me"); HIGH_CLAIM.append(cl)
+        aid, st, risk = screen(k, cl, vec(1))        # vec(1) is R[0]'s embedding -> similarity 1.0
+        need(st == 'COMPLETED', f"status {st}")
+        n, top_case, top_sim, min_rank, max_rank = one(k, """
+            SELECT count(*), (array_agg(reference_case_id ORDER BY match_rank))[1],
+                   max(similarity_score), min(match_rank), max(match_rank)
+            FROM screening_match WHERE assessment_id=%s""", (aid,))
+        need(n == 3 and min_rank == 1 and max_rank == 3, f"{n} matches, ranks {min_rank}..{max_rank}")
+        need(top_case == R[0] and top_sim > 0.999, f"rank 1 = {top_case} sim {top_sim}")
+        outcome, stored_risk, rule = one(k, "SELECT outcome, risk_indicator, risk_rule_version FROM screening_assessment WHERE assessment_id=%s", (aid,))
+        need(outcome == 'MATCHES_FOUND' and stored_risk == risk == 'HIGH', f"{outcome} {stored_risk} {risk}")
+        need(rule == ACTIVE_RULE, f"rule {rule}")
+        need(q1_k(k, "SELECT fn_compute_claim_risk(%s, %s)", (aid, rule)) == 'HIGH', "fn_compute_claim_risk disagrees")
+        need(one(k, "SELECT screening_status, review_required FROM claim WHERE claim_id=%s", (cl,)) == ('COMPLETED', True),
+             "claim not COMPLETED/review_required")
+        need(q1_k(k, "SELECT count(*) FROM audit_log WHERE assessment_id=%s AND action='SCREENING_COMPLETED'", (aid,)) == 1,
+             "missing SCREENING_COMPLETED audit row")
+    def q1_k(k, sql, args=()):
+        k.execute(sql, args); return k.fetchone()[0]
+    scenario("COMPLETED: 3 ranked matches, risk from active rule = fn_compute_claim_risk, HIGH sets review_required, audited",
+             t_screen_completed)
+
+    FAILED_CLAIM = []
+    def t_screen_failed(k):
+        cl = newclaim(cur_=k, desc="service down"); FAILED_CLAIM.append(cl)
+        aid, st, risk = screen(k, cl, None, reason="embedding service timeout")
+        need(st == 'FAILED' and risk is None, f"{st} {risk}")
+        row = one(k, "SELECT outcome, risk_indicator, risk_rule_version, failure_reason FROM screening_assessment WHERE assessment_id=%s", (aid,))
+        need(row[:3] == (None, None, None) and row[3] == "embedding service timeout", f"row {row}")
+        need(q1_k(k, "SELECT count(*) FROM screening_match WHERE assessment_id=%s", (aid,)) == 0, "matches stored")
+        need(q1_k(k, "SELECT screening_status FROM claim WHERE claim_id=%s", (cl,)) == 'FAILED', "claim not FAILED")
+        need(q1_k(k, "SELECT count(*) FROM audit_log WHERE assessment_id=%s AND action='SCREENING_FAILED'", (aid,)) == 1, "no audit")
+    scenario("AC-05 service failure stored as FAILED: no outcome, no risk, no rule, no matches (never LOW)", t_screen_failed)
+
+    def t_screen_bad_dim(k):
+        cl = newclaim(cur_=k)
+        aid, st, risk = screen(k, cl, "[0.1,0.2,0.3]")
+        reason = q1_k(k, "SELECT failure_reason FROM screening_assessment WHERE assessment_id=%s", (aid,))
+        need(st == 'FAILED' and risk is None and "dimensions" in reason, f"{st} {risk} {reason}")
+    scenario("wrong-dimension embedding becomes a FAILED attempt with the error as reason, not LOW", t_screen_bad_dim, commit=False)
+
+    def t_screen_no_rule(k):
+        k.execute("UPDATE risk_rule SET is_active=false")
+        cl = newclaim(cur_=k)
+        aid, st, risk = screen(k, cl, vec(3))
+        reason = q1_k(k, "SELECT failure_reason FROM screening_assessment WHERE assessment_id=%s", (aid,))
+        need(st == 'FAILED' and risk is None and "no active risk rule" in reason, f"{st} {risk} {reason}")
+        need(q1_k(k, "SELECT count(*) FROM screening_match m JOIN screening_assessment a USING (assessment_id) WHERE a.claim_id=%s", (cl,)) == 0,
+             "partial matches left behind")
+    scenario("no active risk rule: attempt FAILED and the partial COMPLETED work is rolled back", t_screen_no_rule, commit=False)
+
+    def t_new_rule_version(k):
+        k.execute("UPDATE risk_rule SET is_active=false WHERE is_active")
+        k.execute("INSERT INTO risk_rule(rule_version,definition,is_active,created_by) VALUES('test-rule-v2',%s,true,%s)",
+                  (json.dumps({"high_similarity_threshold": 0.99, "medium_similarity_threshold": 0.98}), ADM))
+        cl = newclaim(cur_=k)
+        aid, st, risk = screen(k, cl, vec(1))
+        need(one(k, "SELECT risk_rule_version FROM screening_assessment WHERE assessment_id=%s", (aid,))[0] == 'test-rule-v2', "new version not recorded")
+        old = q1_k(k, "SELECT risk_rule_version FROM screening_assessment WHERE claim_id=%s", (HIGH_CLAIM[0],))
+        need(old == ACTIVE_RULE, f"older assessment changed to {old}")
+    scenario("AC-11 new rule version: new assessment records it, older assessment keeps its version", t_new_rule_version, commit=False)
+
+    expect_err("screening a decided claim rejected", lambda k: screen(k, cm, vec(5)), CHK)
+    expect_err("screening a claim that already has a COMPLETED attempt rejected", lambda k: screen(k, HIGH_CLAIM[0], vec(5)), CHK)
+
+    def t_retry(k):
+        aid, st, risk = screen(k, FAILED_CLAIM[0], vec(2))
+        need(st == 'COMPLETED', st)
+        need(q1_k(k, "SELECT attempt_no FROM screening_assessment WHERE assessment_id=%s", (aid,)) == 2, "attempt_no is not 2")
+    scenario("FR-22 retry after FAILED: next attempt_no, COMPLETED", t_retry)
+
+    print("== migration 002: sp_decide_claim atomicity (FR-08/09/10, AC-06/07)")
+    CF2 = newclaim(desc="decide me"); failed(cur, CF2, 1); c.commit()
+    k0 = conn(); kk = k0.cursor(); BEFORE = counts(kk, CF2); k0.close()
+    expect_err_msg("AC-06 APPROVED with FAILED screening refused by fn_assert_approvable",
+                   lambda k: decide_sp(k, CF2, ADJ, 'APPROVED'), CHK, "screening status is FAILED")
+    k0 = conn(); kk = k0.cursor(); AFTER = counts(kk, CF2); k0.close()
+    rec("guard failure leaves no review, decision, notification or audit row (counts unchanged)", BEFORE == AFTER, f"{BEFORE} -> {AFTER}")
+    expect_err("REJECTED by an inactive adjuster refused (review role trigger)",
+               lambda k: decide_sp(k, CF2, ADJ_OFF, 'REJECTED'), CHK)
+    k0 = conn(); kk = k0.cursor(); AFTER2 = counts(kk, CF2); k0.close()
+    rec("the procedure's earlier SUBMITTED->UNDER_REVIEW update was rolled back too", AFTER2 == BEFORE, f"{BEFORE} -> {AFTER2}")
+    def t_decide_ok(k):
+        rv, dec, note = decide_sp(k, CF2, ADJ, 'REJECTED')
+        need(rv and dec and note, "missing ids")
+        rv_n, dec_n, note_n, audit_n, status = counts(k, CF2)
+        need((rv_n, dec_n, note_n, status) == (BEFORE[0] + 1, BEFORE[1] + 1, BEFORE[2] + 1, 'DECIDED'), f"counts {rv_n},{dec_n},{note_n},{status}")
+        need(q1_k(k, "SELECT notification_type FROM notification WHERE notification_id=%s", (note,)) == 'CLAIM_REJECTED', "wrong notification")
+        need(q1_k(k, "SELECT user_id FROM notification WHERE notification_id=%s", (note,)) == H1, "not sent to the policyholder")
+        acts = {r[0] for r in (k.execute("SELECT action FROM audit_log WHERE claim_id=%s", (CF2,)) or k.fetchall())}
+        need({'REVIEW_RECORDED', 'DECISION_RECORDED'} <= acts, f"audit actions {acts}")
+    scenario("AC-07 REJECTED: review + decision + policyholder notification + audit rows, claim DECIDED", t_decide_ok)
+
+    print("== migration 004: HIGH-risk approval and information responses (FR-09/18, BR-08, AC-06/12)")
+    CH = HIGH_CLAIM[0]
+    def t_direct_insert_blocked(k):
+        cl = newclaim(cur_=k); aid, st, risk = screen(k, cl, vec(2))   # R[1] -> HIGH
+        need(risk == 'HIGH', f"risk {risk}")
+        review(k, cl, 'APPROVED', assessment=aid)
+    expect_err_msg("HIGH-risk approval by direct review INSERT is blocked too (trg_review_guard)",
+                   t_direct_insert_blocked, CHK, "needs an information request")
+    expect_err_msg("HIGH-risk APPROVED before any information request refused",
+                   lambda k: decide_sp(k, CH, ADJ, 'APPROVED'), CHK, "needs an information request")
+    REQ = []
+    def t_request(k):
+        rv, dec, note = decide_sp(k, CH, ADJ, 'INFO_REQUESTED', "Please send the repair invoice.")
+        REQ.append(rv)
+        need(dec is None, "decision created")
+        need(q1_k(k, "SELECT claim_status FROM claim WHERE claim_id=%s", (CH,)) == 'AWAITING_INFO', "not AWAITING_INFO")
+        need(q1_k(k, "SELECT notification_type FROM notification WHERE notification_id=%s", (note,)) == 'INFO_REQUESTED', "no notification")
+    scenario("INFO_REQUESTED: claim AWAITING_INFO, policyholder notified, no decision", t_request)
+    expect_err_msg("HIGH-risk APPROVED while the request is unanswered refused",
+                   lambda k: decide_sp(k, CH, ADJ, 'APPROVED'), CHK, "still unanswered")
+    def respond(k, review_id, responder, claim=CH, body="Invoice attached."):
+        k.execute("INSERT INTO information_response(review_id,claim_id,responder_id,body) VALUES(%s,%s,%s,%s) RETURNING response_id",
+                  (review_id, claim, responder, body)); return k.fetchone()[0]
+    expect_err_msg("another policyholder cannot answer the request",
+                   lambda k: respond(k, REQ[0], H2), CHK, "only the policyholder who submitted this claim")
+    other_review = q1("SELECT review_id FROM review WHERE claim_id=%s AND review_action='INFO_REQUESTED'", (cp,))
+    expect_err_msg("answering a review that is not this claim's latest open request refused",
+                   lambda k: respond(k, other_review, H1), CHK, "no outstanding information request")
+    def t_answer(k):
+        respond(k, REQ[0], H1)
+        need(q1_k(k, "SELECT claim_status FROM claim WHERE claim_id=%s", (CH,)) == 'UNDER_REVIEW', "claim not back to UNDER_REVIEW")
+        need(q1_k(k, "SELECT count(*) FROM notification WHERE claim_id=%s AND user_id=%s AND notification_type='INFO_RECEIVED'", (CH, ADJ)) == 1,
+             "adjuster not notified")
+        need(q1_k(k, "SELECT count(*) FROM audit_log WHERE claim_id=%s AND action='INFORMATION_RESPONSE_ADDED'", (CH,)) == 1, "no audit row")
+    scenario("AC-12 policyholder answers: claim AWAITING_INFO -> UNDER_REVIEW, adjuster notified, audited", t_answer)
+    expect_err_msg("answering the same request twice refused", lambda k: respond(k, REQ[0], H1, body="again"), CHK, "")
+    def t_approve(k):
+        rv, dec, note = decide_sp(k, CH, ADJ, 'APPROVED', "Invoice verified.")
+        need(dec is not None, "no decision")
+        need(one(k, "SELECT claim_status, (SELECT decision_status FROM claim_decision WHERE claim_id=%s) FROM claim WHERE claim_id=%s", (CH, CH))
+             == ('DECIDED', 'APPROVED'), "not DECIDED/APPROVED")
+    scenario("HIGH-risk APPROVED after the answer is accepted", t_approve)
+
+    print("== migration 003: reference-case versioning (FR-11)")
+    RV0 = refcase(600); c.commit()
+    VERS = [RV0]
+    def revise(k, case, admin=ADM, emb_seed=601):
+        k.execute("CALL sp_revise_reference_case(%s,%s,%s,%s,%s,%s::vector,NULL)", (case, admin, 'revised title', 'revised description text', M1, vec(emb_seed)))
+        return k.fetchone()[0]
+    def t_revise(k):
+        new = revise(k, RV0); VERS.append(new)
+        old = one(k, "SELECT is_active, deactivated_by FROM reference_fraud_case WHERE case_id=%s", (RV0,))
+        need(old == (False, ADM), f"old row {old}")
+        need(one(k, "SELECT is_active, supersedes_case_id FROM reference_fraud_case WHERE case_id=%s", (new,)) == (True, RV0), "new row not linked")
+        acts = {r[0] for r in (k.execute("SELECT action FROM audit_log WHERE reference_case_id IN (%s,%s)", (RV0, new)) or k.fetchall())}
+        need({'REFERENCE_CASE_ADDED', 'REFERENCE_CASE_DEACTIVATED'} <= acts, f"audit {acts}")
+    scenario("revision deactivates the old row and inserts a linked active version, both audited", t_revise)
+    def t_chain(k):
+        newest = revise(k, VERS[-1], emb_seed=602)
+        expected = [newest, *reversed(VERS)]
+        k.execute("""WITH RECURSIVE chain AS (
+                        SELECT case_id, supersedes_case_id, 1 AS depth FROM reference_fraud_case WHERE case_id=%s
+                        UNION ALL
+                        SELECT r.case_id, r.supersedes_case_id, c.depth + 1
+                        FROM reference_fraud_case r JOIN chain c ON r.case_id = c.supersedes_case_id)
+                     SELECT case_id FROM chain ORDER BY depth""", (newest,))
+        chain = [r[0] for r in k.fetchall()]
+        need(chain == expected, f"chain {chain}")
+        need(q1_k(k, "SELECT count(*) FROM reference_fraud_case WHERE case_id = ANY(%s::uuid[]) AND is_active", (expected,)) == 1,
+             "more than one active version")
+        VERS.append(newest)   # only once every check passed (the transaction commits next)
+    scenario("second revision: WITH RECURSIVE walks newest -> oldest, exactly one version active", t_chain)
+    expect_err_msg("revising an inactive (superseded) version refused", lambda k: revise(k, RV0), CHK, "inactive")
+    expect_err("revision by a claims adjuster refused (deactivator must be ADMIN)", lambda k: revise(k, VERS[-1], admin=ADJ), CHK)
+    expect_err("supersedes_case_id is immutable", lambda k: k.execute("UPDATE reference_fraud_case SET supersedes_case_id=NULL WHERE case_id=%s", (VERS[1],)), RESTR)
+    expect_err("a new version cannot supersede a still-active case",
+               lambda k: k.execute("INSERT INTO reference_fraud_case(title,description,embedding_model_id,embedding,created_by,supersedes_case_id) VALUES('t','d',%s,%s,%s,%s)",
+                                   (M1, vec(603), ADM, VERS[-1])), CHK)
+    expect_err("two versions cannot supersede the same case",
+               lambda k: k.execute("INSERT INTO reference_fraud_case(title,description,embedding_model_id,embedding,created_by,supersedes_case_id) VALUES('t','d',%s,%s,%s,%s)",
+                                   (M1, vec(604), ADM, RV0)), '23505')
+
+    print("== migrations 001/004: users and sessions (FR-01/02, NFR-01)")
+    expect_err_msg("the last active admin cannot be deactivated",
+                   lambda k: k.execute("UPDATE app_user SET is_active=false WHERE user_id=%s", (ADM,)), CHK, "last active administrator")
+    def t_second_admin(k):
+        adm2 = q1_k(k, "INSERT INTO app_user(role_id,email,password_hash,full_name) SELECT role_id,'adm2@x.com','h','Admin Two' FROM app_role WHERE role_name='ADMIN' RETURNING user_id")
+        k.execute("UPDATE app_user SET is_active=false WHERE user_id=%s", (ADM,))
+        need(q1_k(k, "SELECT is_active FROM app_user WHERE user_id=%s", (ADM,)) is False, "not deactivated")
+    scenario("with a second active admin, deactivating one admin is allowed", t_second_admin, commit=False)
+    def t_revoke(k):
+        token = "ab" * 32
+        k.execute("INSERT INTO user_session(user_id,token_hash,expires_at) VALUES(%s,%s,now()+interval '1 hour')", (H2, token))
+        need(q1_k(k, "SELECT count(*) FROM fn_session_principal(%s)", (token,)) == 1, "session not live before")
+        k.execute("SELECT set_config('claimguard.actor_id', %s, true)", (str(ADM),))
+        k.execute("UPDATE app_user SET is_active=false WHERE user_id=%s", (H2,))
+        need(q1_k(k, "SELECT revoked_at IS NOT NULL FROM user_session WHERE token_hash=%s", (token,)), "session not revoked")
+        need(q1_k(k, "SELECT count(*) FROM fn_session_principal(%s)", (token,)) == 0, "principal still resolves")
+        need(one(k, "SELECT actor_id, details->>'is_active' FROM audit_log WHERE action='USER_STATUS_CHANGED' AND target_user_id=%s ORDER BY audit_id DESC LIMIT 1", (H2,))
+             == (ADM, 'false'), "no USER_STATUS_CHANGED audit row with the admin as actor")
+    scenario("deactivation revokes live sessions (trigger) and audits USER_STATUS_CHANGED with the admin as actor", t_revoke, commit=False)
+    expect_err("a session cannot be issued to an inactive user",
+               lambda k: k.execute("INSERT INTO user_session(user_id,token_hash,expires_at) VALUES(%s,%s,now()+interval '1 hour')", (ADJ_OFF, "cd" * 32)), CHK)
+
 passed = sum(1 for r in results if r[1]); failed_ = [r for r in results if not r[1]]
 print(f"\nTOTAL {len(results)}  PASS {passed}  FAIL {len(failed_)}")
 for r in failed_: print("  FAILED:", r[0], r[2])
+sys.exit(1 if failed_ else 0)
 
 
