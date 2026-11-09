@@ -3,10 +3,11 @@ import pool from "@/app/db/pool";
 import { getSessionUser, homePathFor } from "@/app/lib/auth";
 import SimpleShell from "@/app/components/SimpleShell";
 import { ROLE_LABELS, type Role } from "@/app/types";
+import UserStatusButton from "./UserStatusButton";
 
 export const metadata = { title: "Users & sessions | ClaimGuard" };
 
-// Admin only: every user, their role, and how many live sessions they have.
+// Admin only: every user, their role, live sessions, and activation.
 export default async function AdminUsersPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
@@ -32,11 +33,10 @@ export default async function AdminUsersPage() {
     <SimpleShell
       user={user}
       title="Users & sessions"
-      subtitle="All accounts, their roles, and who is currently signed in."
-      backHref="/"
+      subtitle="Deactivating a user signs them out everywhere immediately (database trigger). Accounts are never deleted."
     >
       <div className="panel overflow-x-auto">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-5 py-3">Name</th>
@@ -44,6 +44,7 @@ export default async function AdminUsersPage() {
               <th className="px-5 py-3">Role</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3 text-right">Live sessions</th>
+              <th className="px-5 py-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +61,13 @@ export default async function AdminUsersPage() {
                   )}
                 </td>
                 <td className="px-5 py-3 text-right">{r.live_sessions}</td>
+                <td className="px-5 py-3 text-right">
+                  {r.user_id === user.userId ? (
+                    <span className="text-xs text-slate-400">You</span>
+                  ) : (
+                    <UserStatusButton userId={r.user_id} name={r.full_name} isActive={r.is_active} />
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
