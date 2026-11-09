@@ -30,6 +30,9 @@ export interface DashboardStats {
 }
 
 export interface ClaimRow {
+  /** Full claim UUID, used for the detail link. */
+  claimId: string;
+  /** Short display id, e.g. "CL-D1000000". */
   id: string;
   claimant: string;
   type: string;
