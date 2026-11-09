@@ -107,6 +107,9 @@ DROP FUNCTION IF EXISTS fn_user_status_guard();             -- migration 004
 DROP FUNCTION IF EXISTS fn_user_status_audit();             -- migration 004
 DROP FUNCTION IF EXISTS _seed_vec(integer);   -- seed helper, left behind if a seed run failed
 
+-- Privileges granted by migration 005 disappear with the objects. The roles claimguard_app and
+-- claimguard_readonly are cluster-wide and are kept; migration 005 re-grants to them.
+
 -- The pgvector extension is kept on purpose: re-creating it may need superuser rights,
 -- and the schema uses CREATE EXTENSION IF NOT EXISTS. To remove it too:
 --   DROP EXTENSION IF EXISTS vector;

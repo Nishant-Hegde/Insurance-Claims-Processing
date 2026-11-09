@@ -636,6 +636,48 @@ if MIGRATIONS:
     scenario("deactivation revokes live sessions (trigger) and audits USER_STATUS_CHANGED with the admin as actor", t_revoke, commit=False)
     expect_err("a session cannot be issued to an inactive user",
                lambda k: k.execute("INSERT INTO user_session(user_id,token_hash,expires_at) VALUES(%s,%s,now()+interval '1 hour')", (ADJ_OFF, "cd" * 32)), CHK)
+    def t_session_cleanup(k):
+        k.execute("""INSERT INTO user_session(user_id,token_hash,created_at,expires_at,revoked_at) VALUES
+                       (%s, %s, now()-interval '10 days', now()-interval '9 days', NULL),
+                       (%s, %s, now()-interval '2 days',  now()+interval '1 day',  now()-interval '1 day'),
+                       (%s, %s, now(),                    now()+interval '1 hour', NULL)""",
+                  (H1, "e1" * 32, H1, "e2" * 32, H1, "e3" * 32))
+        k.execute("DELETE FROM user_session WHERE revoked_at IS NOT NULL OR expires_at <= now() RETURNING token_hash")
+        gone = sorted(r[0] for r in k.fetchall())
+        need(gone == sorted(["e1" * 32, "e2" * 32]), f"deleted {len(gone)} rows")
+        need(q1_k(k, "SELECT count(*) FROM user_session WHERE token_hash=%s", ("e3" * 32,)) == 1, "live session deleted")
+    scenario("DML DELETE: expired and revoked sessions are deleted, the live one is kept", t_session_cleanup, commit=False)
+
+    if any(m.name.startswith("005_") for m in MIGRATIONS):
+        print("== migration 005: database roles and privileges (FR-02, NFR-01)")
+        DENIED = '42501'   # insufficient_privilege
+        def as_role(role, sql, args=()):
+            def fn(k):
+                k.execute(f"SET LOCAL ROLE {role}")
+                k.execute(sql, args)
+            return fn
+        expect_err("claimguard_app cannot DELETE claims (no DELETE privilege, before any trigger)",
+                   as_role("claimguard_app", "DELETE FROM claim WHERE claim_id=%s", (CL,)), DENIED)
+        expect_err("claimguard_app cannot TRUNCATE", as_role("claimguard_app", "TRUNCATE claim CASCADE"), DENIED)
+        expect_err("claimguard_app cannot UPDATE the audit log", as_role("claimguard_app", "UPDATE audit_log SET details='{}'"), DENIED)
+        expect_err("claimguard_app cannot change the schema", as_role("claimguard_app", "CREATE TABLE app_owned_table (x int)"), DENIED)
+        def t_app_flow(k):
+            k.execute("SET LOCAL ROLE claimguard_app")
+            cl = newclaim(cur_=k, desc="role check")
+            aid, st, risk = screen(k, cl, vec(4))
+            need(st == 'COMPLETED', f"screening {st}")
+            rv, dec, note = decide_sp(k, cl, ADJ, 'REJECTED')
+            need(dec is not None and note is not None, "decision or notification missing")
+            need(q1_k(k, "SELECT count(*) FROM audit_log WHERE claim_id=%s", (cl,)) >= 4, "audit rows not written")
+            k.execute("DELETE FROM user_session WHERE expires_at <= now()")   # housekeeping is allowed
+        scenario("claimguard_app can run the whole workflow: insert, CALL both procedures, triggers write audit", t_app_flow, commit=False)
+        def t_readonly_views(k):
+            k.execute("SET LOCAL ROLE claimguard_readonly")
+            need(q1_k(k, "SELECT sum(claim_count) FROM v_claim_status_summary") is not None, "view not readable")
+        scenario("claimguard_readonly can read the reporting views", t_readonly_views, commit=False)
+        expect_err("claimguard_readonly cannot read base tables", as_role("claimguard_readonly", "SELECT * FROM claim"), DENIED)
+        expect_err("claimguard_readonly cannot CALL procedures",
+                   as_role("claimguard_readonly", "CALL sp_decide_claim(%s,%s,'REJECTED','x',NULL,NULL,NULL)", (CL, ADJ)), DENIED)
 
 passed = sum(1 for r in results if r[1]); failed_ = [r for r in results if not r[1]]
 print(f"\nTOTAL {len(results)}  PASS {passed}  FAIL {len(failed_)}")
