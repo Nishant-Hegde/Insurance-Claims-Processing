@@ -1,0 +1,441 @@
+ClaimGuard test results (raw output, unedited)
+Recorded: 2026-11-09 08:36 UTC on Windows 11
+Database: PostgreSQL 16.15 + pgvector (Docker image pgvector/pgvector:pg16), fresh disposable databases
+Embedding service: sentence-transformers/all-MiniLM-L6-v2 (normalized-v1), CPU
+Web app: Next.js 16.4.3 dev server; Node v22.19.0; Python 3.13
+
+######################################################################
+# 1. Database tests: database/tests/claimguard_tests_v4.py
+#    python claimguard_tests_v4.py claimguard_test_suite
+#    (recreates the database, applies schema v4 + migrations 001-004)
+######################################################################
+applied: claimguard_schema_v4.sql, 001_user_session_auth.sql, 002_risk_rule_fk_and_procedure.sql, 003_reference_case_versioning.sql, 004_workflow_guards.sql
+== claims / domain constraints (FR-03, FR-13, AC-01, AC-02)
+PASS AC-01 valid claim stored as SUBMITTED/PENDING
+PASS AC-02 negative amount rejected
+PASS AC-02 zero amount rejected
+PASS AC-02 unknown policy rejected
+PASS BR-01 claimant must be policy holder
+PASS blank description rejected
+PASS inactive policy rejected
+PASS incident before policy start rejected
+PASS future incident date rejected
+PASS claim inserted as DECIDED rejected
+PASS claim inserted with COMPLETED screening rejected
+== claim state machine
+PASS claim content immutable (amount update)
+PASS direct screening_status update rejected
+PASS direct claim_status=DECIDED rejected
+PASS SUBMITTED -> UNDER_REVIEW allowed
+PASS UNDER_REVIEW -> SUBMITTED rejected
+== roles and users
+PASS policy held by adjuster rejected
+PASS review by policyholder rejected
+PASS review by inactive adjuster rejected
+PASS reference case by adjuster rejected
+PASS role change of user with policies rejected
+PASS duplicate email (case-insensitive) rejected
+PASS blank password_hash rejected
+== embeddings / vectors
+PASS zero vector reference case rejected
+PASS wrong-dimension vector rejected
+PASS embedding_model dimension != 384 rejected
+== screening (FR-06/07, BR-07, AC-04, AC-05)
+PASS FAILED assessment with risk_indicator rejected (AC-05)
+PASS FAILED assessment with outcome rejected
+PASS FAILED assessment without failure_reason rejected
+PASS COMPLETED assessment without risk_indicator rejected
+PASS COMPLETED assessment with zero vector rejected
+PASS failed attempt sets claim.screening_status=FAILED (not low risk)
+PASS duplicate attempt_no rejected
+PASS retry after failure: COMPLETED attempt 2 with ranked matches
+PASS AC-04 explicit NO_MATCH completed state
+PASS NO_MATCH assessment with a match rejected
+PASS MATCHES_FOUND with zero matches rejected at commit
+PASS rank gap (1,3) rejected at commit
+PASS match_rank > top_k rejected
+PASS same reference case twice in one assessment rejected
+PASS duplicate rank rejected
+PASS cross-model match (model-2 case vs model-1 assessment) rejected
+PASS match with mismatched case model rejected
+PASS BR-02 deactivated reference case cannot be matched
+PASS BR-02 unconfirmed reference case cannot be matched
+PASS match added in a later transaction rejected
+PASS new attempt after COMPLETED screening rejected
+== review / approval guard / decision (FR-08/09/14, AC-06/07)
+PASS AC-06 APPROVED review while screening PENDING rejected
+PASS AC-06 APPROVED review while screening FAILED rejected
+PASS APPROVED review citing the FAILED attempt rejected
+PASS APPROVED review without assessment rejected
+PASS review citing another claim's assessment rejected
+PASS blank review notes rejected
+PASS REJECTED/INFO_REQUESTED review allowed while screening pending (documented A9)
+PASS decision not mirroring review action rejected
+PASS failed approval aborts whole transaction
+PASS no partial review row left after rolled-back transaction
+PASS AC-07 valid approval: review+decision+audit commit, claim DECIDED
+PASS (same, re-read from a new session: committed)
+PASS second decision on decided claim rejected
+PASS review on decided claim rejected
+PASS screening attempt on decided claim rejected
+PASS decided claim cannot be reverted
+PASS decided claim review_required immutable
+PASS rejection of a FAILED-screening claim keeps screening_status FAILED
+== append-only / no-delete (FR-10, NFR-02)
+PASS audit_log: UPDATE rejected
+PASS audit_log: DELETE rejected
+PASS audit_log: TRUNCATE CASCADE rejected
+PASS screening_assessment: UPDATE rejected
+PASS screening_assessment: DELETE rejected
+PASS screening_assessment: TRUNCATE CASCADE rejected
+PASS screening_match: UPDATE rejected
+PASS screening_match: DELETE rejected
+PASS screening_match: TRUNCATE CASCADE rejected
+PASS review: UPDATE rejected
+PASS review: DELETE rejected
+PASS review: TRUNCATE CASCADE rejected
+PASS claim_decision: UPDATE rejected
+PASS claim_decision: DELETE rejected
+PASS claim_decision: TRUNCATE CASCADE rejected
+PASS app_user: DELETE rejected
+PASS app_user: TRUNCATE CASCADE rejected
+PASS policy: DELETE rejected
+PASS policy: TRUNCATE CASCADE rejected
+PASS claim: DELETE rejected
+PASS claim: TRUNCATE CASCADE rejected
+PASS reference_fraud_case: DELETE rejected
+PASS reference_fraud_case: TRUNCATE CASCADE rejected
+PASS audit_log: plain TRUNCATE rejected
+PASS screening_match: plain TRUNCATE rejected
+PASS claim_decision: plain TRUNCATE rejected
+PASS TRUNCATE app_role CASCADE cannot wipe history
+== reference-case lifecycle (FR-11)
+PASS adjuster cannot deactivate a reference case
+PASS deactivation without actor rejected
+PASS reference-case embedding immutable
+PASS reactivation rejected
+PASS deactivation record cannot be rewritten
+PASS admin deactivation allowed
+== audit log constraints
+PASS audit: two targets rejected
+PASS audit: no target rejected
+PASS audit: action/target mismatch rejected
+PASS audit: USER without actor rejected
+PASS audit: SYSTEM with actor rejected
+PASS audit: unknown action rejected
+PASS audit: assessment of a different claim rejected
+PASS audit: assessment without claim rejected
+PASS assessment insert automatically writes exactly one screening audit event
+PASS duplicate SCREENING_COMPLETED for same attempt rejected
+PASS audit: several REVIEW_RECORDED rows may cite one assessment
+PASS audit: reference-case and user events accepted
+== views (FR-12)
+PASS queue shows failed attempt with NULL risk; no decided rows; summary total = claim count
+== HNSW / pgvector (NFR-06)
+   plan nodes: ['->  Index Scan using ix_ref_case_embedding_hnsw on reference_fraud_case  (cost=470.09..609', 'Filter: (embedding_model_id = 1)']
+PASS top-k query uses ix_ref_case_embedding_hnsw at ~3000 rows
+PASS HNSW top-k returns k=5 rows for all 30 queries
+   MEASURED recall@5 vs exact scan, 30 random queries on 3000 uniform-random 384-d vectors: ef_search=40 -> 0.69; ef_search=200 -> 1.00
+== SRS v2.0 extensions (risk rules, responses, notifications, search, reports)
+PASS versioned rule, notification soft dismissal and analytics/search views are queryable
+PASS notification content cannot be rewritten
+PASS notification cannot be deleted
+PASS information response with blank body is rejected
+== migration 002: risk-rule foreign key (BR-06, FR-07)
+PASS FK: assessment citing an unknown risk_rule version rejected
+PASS FK: a risk_rule used by an assessment cannot be deleted
+PASS FK: a used rule_version cannot be renamed
+== migration 002: sp_screen_claim (FR-05/06/07/14/16, AC-04/05/10/11)
+PASS COMPLETED: 3 ranked matches, risk from active rule = fn_compute_claim_risk, HIGH sets review_required, audited
+PASS AC-05 service failure stored as FAILED: no outcome, no risk, no rule, no matches (never LOW)
+PASS wrong-dimension embedding becomes a FAILED attempt with the error as reason, not LOW
+PASS no active risk rule: attempt FAILED and the partial COMPLETED work is rolled back
+PASS AC-11 new rule version: new assessment records it, older assessment keeps its version
+PASS screening a decided claim rejected
+PASS screening a claim that already has a COMPLETED attempt rejected
+PASS FR-22 retry after FAILED: next attempt_no, COMPLETED
+== migration 002: sp_decide_claim atomicity (FR-08/09/10, AC-06/07)
+PASS AC-06 APPROVED with FAILED screening refused by fn_assert_approvable
+PASS guard failure leaves no review, decision, notification or audit row (counts unchanged)
+PASS REJECTED by an inactive adjuster refused (review role trigger)
+PASS the procedure's earlier SUBMITTED->UNDER_REVIEW update was rolled back too
+PASS AC-07 REJECTED: review + decision + policyholder notification + audit rows, claim DECIDED
+== migration 004: HIGH-risk approval and information responses (FR-09/18, BR-08, AC-06/12)
+PASS HIGH-risk approval by direct review INSERT is blocked too (trg_review_guard)
+PASS HIGH-risk APPROVED before any information request refused
+PASS INFO_REQUESTED: claim AWAITING_INFO, policyholder notified, no decision
+PASS HIGH-risk APPROVED while the request is unanswered refused
+PASS another policyholder cannot answer the request
+PASS answering a review that is not this claim's latest open request refused
+PASS AC-12 policyholder answers: claim AWAITING_INFO -> UNDER_REVIEW, adjuster notified, audited
+PASS answering the same request twice refused
+PASS HIGH-risk APPROVED after the answer is accepted
+== migration 003: reference-case versioning (FR-11)
+PASS revision deactivates the old row and inserts a linked active version, both audited
+PASS second revision: WITH RECURSIVE walks newest -> oldest, exactly one version active
+PASS revising an inactive (superseded) version refused
+PASS revision by a claims adjuster refused (deactivator must be ADMIN)
+PASS supersedes_case_id is immutable
+PASS a new version cannot supersede a still-active case
+PASS two versions cannot supersede the same case
+== migrations 001/004: users and sessions (FR-01/02, NFR-01)
+PASS the last active admin cannot be deactivated
+PASS with a second active admin, deactivating one admin is allowed
+PASS deactivation revokes live sessions (trigger) and audits USER_STATUS_CHANGED with the admin as actor
+PASS a session cannot be issued to an inactive user
+
+TOTAL 153  PASS 153  FAIL 0
+
+######################################################################
+# 2. API tests: backend/tests/api.test.mjs
+#    API_BASE_URL=http://127.0.0.1:3100 node --test tests/api.test.mjs
+#    Database built with the full apply order: schema v4, seed v1, 001,
+#    demo passwords, 002, 003, 004, reference cases v2
+######################################################################
+TAP version 13
+# Subtest: 01 each demo role signs in and /api/auth/me returns its role
+ok 1 - 01 each demo role signs in and /api/auth/me returns its role
+  ---
+  duration_ms: 1351.276
+  type: 'test'
+  ...
+# Subtest: 02 wrong password and deactivated user get the same 401
+ok 2 - 02 wrong password and deactivated user get the same 401
+  ---
+  duration_ms: 537.0915
+  type: 'test'
+  ...
+# Subtest: 03 no session: API returns 401, pages redirect to /login
+ok 3 - 03 no session: API returns 401, pages redirect to /login
+  ---
+  duration_ms: 16.6765
+  type: 'test'
+  ...
+# Subtest: 04 policyholder cannot read another policyholder's claim (404, nothing revealed)
+ok 4 - 04 policyholder cannot read another policyholder's claim (404, nothing revealed)
+  ---
+  duration_ms: 63.6613
+  type: 'test'
+  ...
+# Subtest: 05 policyholder cannot claim against someone else's policy (403)
+ok 5 - 05 policyholder cannot claim against someone else's policy (403)
+  ---
+  duration_ms: 42.0206
+  type: 'test'
+  ...
+# Subtest: 06 policyholder is refused staff APIs (403)
+ok 6 - 06 policyholder is refused staff APIs (403)
+  ---
+  duration_ms: 56.6126
+  type: 'test'
+  ...
+# Subtest: 07 adjuster is refused admin APIs (403) and admin pages (redirect)
+ok 7 - 07 adjuster is refused admin APIs (403) and admin pages (redirect)
+  ---
+  duration_ms: 369.2743
+  type: 'test'
+  ...
+# Subtest: 08 admin cannot record a review (only claims adjusters decide)
+ok 8 - 08 admin cannot record a review (only claims adjusters decide)
+  ---
+  duration_ms: 33.1153
+  type: 'test'
+  ...
+# Subtest: 09 invalid claims are rejected with readable messages
+ok 9 - 09 invalid claims are rejected with readable messages
+  ---
+  duration_ms: 116.8827
+  type: 'test'
+  ...
+# Subtest: 10 policyholder submits a paraphrased fraud pattern; response hides the risk result
+ok 10 - 10 policyholder submits a paraphrased fraud pattern; response hides the risk result
+  ---
+  duration_ms: 192.2247
+  type: 'test'
+  ...
+# Subtest: 11 adjuster sees MATCHES_FOUND, HIGH risk, review_required and the matching pattern ranked first
+ok 11 - 11 adjuster sees MATCHES_FOUND, HIGH risk, review_required and the matching pattern ranked first
+  ---
+  duration_ms: 102.0816
+  type: 'test'
+  ...
+# Subtest: 12 policyholder's view of the same claim has no fraud evidence
+ok 12 - 12 policyholder's view of the same claim has no fraud evidence
+  ---
+  duration_ms: 27.372
+  type: 'test'
+  ...
+# Subtest: 13 an unrelated claim scores low
+ok 13 - 13 an unrelated claim scores low
+  ---
+  duration_ms: 165.4883
+  type: 'test'
+  ...
+# Subtest: 14 /api/similar ranks the matching pattern first for an ad-hoc description
+ok 14 - 14 /api/similar ranks the matching pattern first for an ad-hoc description
+  ---
+  duration_ms: 64.6344
+  type: 'test'
+  ...
+# Subtest: 15 approving the HIGH-risk claim straight away is blocked by the database
+ok 15 - 15 approving the HIGH-risk claim straight away is blocked by the database
+  ---
+  duration_ms: 44.7353
+  type: 'test'
+  ...
+# Subtest: 16 adjuster requests information; claim waits for the policyholder
+ok 16 - 16 adjuster requests information; claim waits for the policyholder
+  ---
+  duration_ms: 109.2569
+  type: 'test'
+  ...
+# Subtest: 17 approval is still blocked while the request is unanswered
+ok 17 - 17 approval is still blocked while the request is unanswered
+  ---
+  duration_ms: 41.3133
+  type: 'test'
+  ...
+# Subtest: 18 another policyholder cannot answer the request
+ok 18 - 18 another policyholder cannot answer the request
+  ---
+  duration_ms: 55.7727
+  type: 'test'
+  ...
+# Subtest: 19 the claimant answers once; the claim returns to UNDER_REVIEW; a second answer is refused
+ok 19 - 19 the claimant answers once; the claim returns to UNDER_REVIEW; a second answer is refused
+  ---
+  duration_ms: 151.6216
+  type: 'test'
+  ...
+# Subtest: 20 approval now succeeds; the decision is final
+ok 20 - 20 approval now succeeds; the decision is final
+  ---
+  duration_ms: 108.565
+  type: 'test'
+  ...
+# Subtest: 21 policyholder reads and dismisses own notifications; another user cannot touch them
+ok 21 - 21 policyholder reads and dismisses own notifications; another user cannot touch them
+  ---
+  duration_ms: 213.5457
+  type: 'test'
+  ...
+# Subtest: 22 admin issues a policy; duplicate number and non-policyholder holder are refused
+ok 22 - 22 admin issues a policy; duplicate number and non-policyholder holder are refused
+  ---
+  duration_ms: 86.7849
+  type: 'test'
+  ...
+# Subtest: 23 deactivating a user revokes their live session; reactivation restores sign-in
+ok 23 - 23 deactivating a user revokes their live session; reactivation restores sign-in
+  ---
+  duration_ms: 430.8583
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4478.7144
+
+######################################################################
+# 3. Semantic sanity check (SRS AC-15): embedding-service/scripts/calibrate_thresholds.py
+#    Top similarity of each probe against the 18 reference cases.
+#    Rule v2.0-minilm: HIGH >= 0.65, MEDIUM >= 0.55
+######################################################################
+
+FRAUD-LIKE
+  0.722  Repair invoice inflated by the workshop after approval
+  0.743  Staged rear-end collision with a pre-arranged lead vehicle
+  0.684  Phantom passengers added to a minor collision
+  0.630  Vehicle reported stolen after being sold to a scrap dealer
+  0.573  Shop fire set deliberately to clear unsold stock and debt
+  0.704  Hospital admission and surgery that never took place
+  0.660  Burglary staged to claim jewellery that was never owned
+  0.812  Same incident claimed twice under two policies
+  min 0.573  max 0.812  mean 0.691
+
+ORDINARY
+  0.374  Burglary staged to claim jewellery that was never owned
+  0.401  Policy bought after the loss had already happened
+  0.573  Swoop-and-squat crash caused by two cooperating cars
+  0.416  Hospital admission and surgery that never took place
+  0.375  Car abandoned and torched to escape loan payments
+  0.475  Slow pipe leak reported as a sudden burst
+  0.437  Same phone reported lost to several insurers
+  0.394  Staged rear-end collision with a pre-arranged lead vehicle
+  min 0.374  max 0.573  mean 0.431
+
+######################################################################
+# 4. npm run typecheck / npm run build (backend/)
+######################################################################
+
+> claimguard-web@1.0.0 typecheck
+> tsc --noEmit
+
+
+> claimguard-web@1.0.0 build
+> next build
+
+▲ Next.js 16.4.3 (Turbopack)
+✓ Running next.config.mjs took 31ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.3s
+  Running TypeScript ...
+  Finished TypeScript in 428ms ...
+  Collecting page data using 21 workers ...
+  Generating static pages using 21 workers (0/25) ...
+  Generating static pages using 21 workers (6/25) 
+  Generating static pages using 21 workers (12/25) 
+  Generating static pages using 21 workers (18/25) 
+✓ Generating static pages using 21 workers (25/25) in 490ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /adjuster/claims/[id]
+├ ƒ /adjuster/queue
+├ ƒ /admin
+├ ƒ /admin/audit
+├ ƒ /admin/policies
+├ ƒ /admin/reference-cases
+├ ƒ /admin/reference-cases/[id]
+├ ƒ /admin/reference-cases/new
+├ ƒ /admin/users
+├ ƒ /api/admin/policies
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/claims
+├ ƒ /api/claims/[id]
+├ ƒ /api/claims/[id]/rescreen
+├ ƒ /api/claims/[id]/responses
+├ ƒ /api/claims/[id]/review
+├ ƒ /api/dashboard/stats
+├ ƒ /api/notifications
+├ ƒ /api/notifications/[id]
+├ ƒ /api/notifications/read-all
+├ ƒ /api/reference-cases
+├ ƒ /api/reference-cases/[id]
+├ ƒ /api/reference-cases/[id]/deactivate
+├ ƒ /api/similar
+├ ƒ /claims/[id]
+├ ƒ /login
+├ ƒ /my-claims
+├ ƒ /my-claims/[id]
+├ ƒ /my-claims/new
+├ ƒ /notifications
+└ ƒ /similar
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
