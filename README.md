@@ -12,6 +12,9 @@ PostgreSQL through **pgvector**.
 
 **Team:** Hrushikesh Karnam (PES1UG24CS668) · Nishant Hegde (PES1UG24CS681)
 
+**Evaluators:** [`docs/RUBRIC_MAPPING.md`](docs/RUBRIC_MAPPING.md) maps each of the 14 rubric items to the
+files, pages and queries that satisfy it, with a one-minute demo for each.
+
 ## Contents
 
 1. [Problem statement](#problem-statement)
@@ -33,6 +36,7 @@ PostgreSQL through **pgvector**.
 17. [Team and individual contributions](#team-and-individual-contributions)
 18. [Known limitations](#known-limitations)
 19. [Conclusion and future enhancements](#conclusion-and-future-enhancements)
+20. [Rubric mapping](docs/RUBRIC_MAPPING.md) (separate document)
 
 ## Problem statement
 
